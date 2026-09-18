@@ -1,0 +1,10 @@
+{
+  "Kampanya 1": {
+    "name": "Kampanya 1",
+    "budget": 500,
+    "target_audience": "Türkiye, 18-35 yaş, Teknoloji ve Girişimcilik",
+    "status": "active",
+    "estimated_reach": 6250,
+    "updated_at": "2026-09-16T22:56:40.423532"
+  }
+}

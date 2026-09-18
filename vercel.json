@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "public": true,
+  "cleanUrls": true,
+  "routes": [
+    {
+      "src": "/static/(.*)",
+      "dest": "/jarvis_web/static/$1"
+    },
+    {
+      "src": "/manifest.json",
+      "dest": "/jarvis_web/static/manifest.json"
+    },
+    {
+      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|json|woff2|woff|ttf|mp3|wav))",
+      "dest": "/jarvis_web/static/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/jarvis_web/static/index.html"
+    }
+  ]
+}

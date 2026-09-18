@@ -1,0 +1,36 @@
+{
+  "salon_isik": {
+    "name": "Salon Işığı",
+    "type": "light",
+    "state": "off",
+    "brightness": 80,
+    "room": "Salon"
+  },
+  "calisma_isik": {
+    "name": "Çalışma Odası Işığı",
+    "type": "light",
+    "state": "on",
+    "brightness": 100,
+    "room": "Çalışma Odası"
+  },
+  "salon_klima": {
+    "name": "Salon Kliması",
+    "type": "climate",
+    "state": "on",
+    "temp": 22,
+    "mode": "cool",
+    "room": "Salon"
+  },
+  "ana_kilit": {
+    "name": "Dış Kapı Kilidi",
+    "type": "lock",
+    "state": "locked",
+    "room": "Giriş"
+  },
+  "kahve_priz": {
+    "name": "Kahve Makinesi Prizi",
+    "type": "plug",
+    "state": "off",
+    "room": "Mutfak"
+  }
+}

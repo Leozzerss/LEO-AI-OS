@@ -1,0 +1,41 @@
+# ── Private Credentials & Secrets ───────────────────────────
+config/api_keys.json
+memory/instagram_session.json
+jarvis_web/web_config.json
+jarvis_web/certs/*.pem
+jarvis_web/certs/*.key
+*.key
+*.pem
+.env
+.env.*
+
+# ── Python Cache & Virtual Environments ─────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+build/
+dist/
+*.egg-info/
+
+# ── macOS System Files ──────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+.swift-cache/
+
+# ── Node & Vercel Artifacts ─────────────────────────────────
+node_modules/
+.vercel/
+npm-debug.log*
+
+# ── Runtime Logs & Ephemeral Files ──────────────────────────
+*.log
+memory/leo_tunnel_active.json

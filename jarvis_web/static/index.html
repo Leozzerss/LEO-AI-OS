@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="sq">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#010608">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="LEO OS">
+  <title>LEO AI — leohoca</title>
+  <link rel="manifest" href="/static/manifest.json">
+  <link rel="apple-touch-icon" href="/static/icon.png">
+  <link rel="icon" type="image/png" href="/static/icon.png">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+  <!-- ── 0. FACE ID & PIN SECURITY LOCK SCREEN ─────────────────────────── -->
+  <div id="lock-screen">
+    <div class="lock-container">
+      <div class="lock-logo-wrap">
+        <div class="lock-logo-hex">LEO</div>
+        <div class="lock-subtitle">SISTEMI I SIGURISË — leohoca</div>
+      </div>
+
+      <!-- Face ID Camera & Scan Frame -->
+      <div class="face-scanner-box">
+        <div class="face-frame">
+          <video id="lock-cam" autoplay playsinline muted></video>
+          <div class="scan-beam"></div>
+          <div class="corner tl"></div><div class="corner tr"></div>
+          <div class="corner bl"></div><div class="corner br"></div>
+        </div>
+        <div id="face-status" class="face-status">Duke skanuar fytyrën e autorizuar...</div>
+      </div>
+
+      <!-- PIN Code Display & Keypad -->
+      <div class="pin-section">
+        <div class="pin-dots">
+          <span class="dot" id="dot-1"></span>
+          <span class="dot" id="dot-2"></span>
+          <span class="dot" id="dot-3"></span>
+          <span class="dot" id="dot-4"></span>
+        </div>
+        <div class="keypad">
+          <button class="key-btn" data-val="1">1</button>
+          <button class="key-btn" data-val="2">2</button>
+          <button class="key-btn" data-val="3">3</button>
+          <button class="key-btn" data-val="4">4</button>
+          <button class="key-btn" data-val="5">5</button>
+          <button class="key-btn" data-val="6">6</button>
+          <button class="key-btn" data-val="7">7</button>
+          <button class="key-btn" data-val="8">8</button>
+          <button class="key-btn" data-val="9">9</button>
+          <button class="key-btn action-key" id="btn-face-auth">👤 FACE</button>
+          <button class="key-btn" data-val="0">0</button>
+          <button class="key-btn action-key" id="btn-del">⌫</button>
+        </div>
+      </div>
+
+      <div class="lock-hint">Autentifikimi i autorizuar vetëm për: <b>leohoca</b> (PIN: 1234)</div>
+    </div>
+  </div>
+
+  <!-- ── 1. APP HEADER ────────────────────────────────────────────────── -->
+  <header>
+    <div class="brand-box">
+      <div class="brand">L.E.O <span class="sub">OS</span></div>
+      <div class="creator-badge">KRIJUESI: leohoca</div>
+    </div>
+    <div class="header-actions">
+      <button id="btn-open-accounts" class="badge acct-badge" title="Hesap Bağlama & Sosyal Medya">🔗 HESAPLAR</button>
+      <span id="header-device-badge" class="badge dev-badge">📱 Celulari</span>
+      <span id="badge-server" class="badge off">SERVER</span>
+      <span id="badge-agent" class="badge off">MAC</span>
+      <button id="btn-relock" class="icon-btn" title="Kyç sistemin">🔒</button>
+    </div>
+  </header>
+
+  <!-- ── 2. MAIN VIEWS (TABS) ─────────────────────────────────────────── -->
+  <main>
+    <!-- ── TAB 0: HUD CYBER COMMAND CENTER (HUD_DATA_PANELS_WITH_CENTER_SPECTRUM) ── -->
+    <section id="tab-hud" class="view-tab active">
+      <!-- Top HUD System Ribbon -->
+      <div class="hud-top-ribbon">
+        <div class="hud-ribbon-left">
+          <span class="hud-glitch-tag">SYS // LEO COMMAND CENTER</span>
+          <span class="hud-perm-tag">PERMISSIONS: FULL_UNRESTRICTED</span>
+        </div>
+        <div class="hud-ribbon-right">
+          <span class="hud-pulse-dot"></span>
+          <span id="hud-clock-tick" class="hud-clock">16:51:00 UTC</span>
+        </div>
+      </div>
+
+      <!-- Center Voice Spectrum Visualizer Widget -->
+      <div class="hud-widget hud-center-spectrum-widget" id="widget-voice-spectrum">
+        <div class="hud-widget-header">
+          <div class="hud-widget-title">
+            <span class="hud-icon">🔊</span>
+            <span>VOICE SPECTRUM VISUALIZER // NEURAL CORE</span>
+          </div>
+          <div class="hud-widget-meta" id="hud-spectrum-hz">24 kHz PCM</div>
+        </div>
+
+        <div class="spectrum-stage-wrap">
+          <canvas id="hud-spectrum-canvas" class="hud-spectrum-canvas"></canvas>
+          <div class="hud-core-center-overlay" id="hud-core-click-target" title="Prek për të folur / Dokun ve konuş">
+            <div class="hud-core-text">L.E.O</div>
+            <div class="hud-core-sub">NEURAL CORE</div>
+          </div>
+        </div>
+
+        <!-- Horizontal Frequency Equalizer Bars -->
+        <div class="hud-eq-bar-wrap">
+          <canvas id="hud-eq-canvas" class="hud-eq-canvas"></canvas>
+        </div>
+
+        <!-- Spectrum Telemetry & Voice Controls -->
+        <div class="hud-spectrum-controls">
+          <div class="hud-audio-stats">
+            <div class="hud-stat-item">
+              <span class="stat-k">DB LEVEL:</span>
+              <span class="stat-v" id="hud-stat-db">-24 dBFS</span>
+            </div>
+            <div class="hud-stat-item">
+              <span class="stat-k">STATUS:</span>
+              <span class="stat-v" id="hud-voice-state">STANDBY</span>
+            </div>
+            <div class="hud-stat-item">
+              <span class="stat-k">LISTENER:</span>
+              <span class="stat-v" id="hud-listener-state">ALWAYS-ON</span>
+            </div>
+          </div>
+
+          <div class="hud-btn-row">
+            <button id="btn-hud-mic" class="hud-action-btn primary-glow">🎙️ MIKROFONI: NDALUR</button>
+            <button id="btn-hud-listener" class="hud-action-btn secondary-glow">⚡ ALWAYS-ON: PO</button>
+            <button id="btn-hud-overlay" class="hud-action-btn">🌌 HUD OVERLAY</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4 Surrounding Cyber Data Panels Grid -->
+      <div class="hud-panels-grid">
+        <!-- 1. LIVE TELEMETRY: CPU, RAM, NETWORK -->
+        <div class="hud-widget hud-panel-card" id="widget-live-telemetry">
+          <div class="hud-widget-header">
+            <div class="hud-widget-title">
+              <span class="hud-icon">⚡</span>
+              <span>LIVE TELEMETRY // HARDWARE</span>
+            </div>
+            <span class="hud-tag-live">● LIVE</span>
+          </div>
+
+          <div class="hud-telemetry-metrics">
+            <div class="hud-gauge-row">
+              <div class="hud-radial-mini">
+                <svg viewBox="0 0 36 36" class="circular-chart cyan">
+                  <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                  <path class="circle" id="hud-cpu-circle" stroke-dasharray="24, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                  <text x="18" y="20.35" class="percentage" id="hud-cpu-text">24%</text>
+                </svg>
+                <span class="gauge-lbl">CPU LOAD</span>
+              </div>
+              <div class="hud-radial-mini">
+                <svg viewBox="0 0 36 36" class="circular-chart blue">
+                  <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                  <path class="circle" id="hud-ram-circle" stroke-dasharray="46, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                  <text x="18" y="20.35" class="percentage" id="hud-ram-text">46%</text>
+                </svg>
+                <span class="gauge-lbl">RAM MEM</span>
+              </div>
+            </div>
+
+            <div class="hud-metric-list">
+              <div class="hud-list-row">
+                <span class="lbl">Rrjeti / Ping:</span>
+                <span class="val" id="hud-ping-val">16 ms (WiFi / 5G)</span>
+              </div>
+              <div class="hud-list-row">
+                <span class="lbl">Bateria & Karikimi:</span>
+                <span class="val" id="hud-batt-val">88% ⚡ Karikohet</span>
+              </div>
+              <div class="hud-list-row">
+                <span class="lbl">GPU Engine:</span>
+                <span class="val" id="hud-gpu-val">Apple GPU (Metal)</span>
+              </div>
+              <div class="hud-list-row">
+                <span class="lbl">Pajisja:</span>
+                <span class="val" id="hud-dev-name">Duke analizuar...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. GPS LOCATION TRACKER & RADAR -->
+        <div class="hud-widget hud-panel-card" id="widget-gps-tracker">
+          <div class="hud-widget-header">
+            <div class="hud-widget-title">
+              <span class="hud-icon">🧭</span>
+              <span>GPS TRACKER & RADAR // MAP</span>
+            </div>
+            <span class="hud-tag-live">🛰️ LOCKED</span>
+          </div>
+
+          <div class="hud-radar-wrap">
+            <canvas id="hud-radar-canvas" class="hud-radar-canvas"></canvas>
+            <div class="hud-radar-crosshair"></div>
+          </div>
+
+          <div class="hud-gps-readout">
+            <div class="hud-gps-row">
+              <span class="coord-tag">LAT:</span> <b id="hud-gps-lat">42.06206° N</b>
+              <span class="coord-tag">LON:</span> <b id="hud-gps-lon">19.50269° E</b>
+            </div>
+            <div class="hud-gps-row-sub">
+              <span>Saktësia: <b id="hud-gps-acc">±6.0 m</b></span>
+              <span>Lartësia: <b id="hud-gps-alt">34 m</b></span>
+            </div>
+            <div class="hud-gps-city" id="hud-gps-city">📍 Shkodër, Albania 🇦🇱 (GPS Live)</div>
+            <div class="hud-gps-actions">
+              <button id="btn-hud-gps-refresh" class="hud-sm-btn">🎯 RIFRESKO GPS</button>
+              <button id="btn-hud-gps-map" class="hud-sm-btn">🗺️ HAP HARTËN</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. ACTIVE IOT SMART HOME HUB -->
+        <div class="hud-widget hud-panel-card" id="widget-iot-devices">
+          <div class="hud-widget-header">
+            <div class="hud-widget-title">
+              <span class="hud-icon">🏠</span>
+              <span>ACTIVE IOT DEVICES // SMART HOME</span>
+            </div>
+            <span class="hud-tag-live">4 ONLINE</span>
+          </div>
+
+          <div class="hud-iot-list">
+            <!-- Klima / AC -->
+            <div class="hud-iot-item">
+              <div class="iot-info">
+                <span class="iot-icon">❄️</span>
+                <div>
+                  <div class="iot-name">Kondicioneri (AC)</div>
+                  <div class="iot-sub" id="iot-ac-sub">Ftohtë • 21.5°C</div>
+                </div>
+              </div>
+              <div class="iot-actions">
+                <button class="iot-btn-temp" id="btn-ac-down">-</button>
+                <span class="iot-temp-display" id="iot-temp-disp">21.5°</span>
+                <button class="iot-btn-temp" id="btn-ac-up">+</button>
+                <button class="iot-toggle active" id="btn-ac-toggle">ON</button>
+              </div>
+            </div>
+
+            <!-- Dritat Smart -->
+            <div class="hud-iot-item">
+              <div class="iot-info">
+                <span class="iot-icon">💡</span>
+                <div>
+                  <div class="iot-name">Ndriçimi Smart RGB</div>
+                  <div class="iot-sub" id="iot-light-sub">Neon Cyan • 85%</div>
+                </div>
+              </div>
+              <div class="iot-actions">
+                <div class="color-dots">
+                  <span class="c-dot dot-cyan active" data-color="cyan"></span>
+                  <span class="c-dot dot-blue" data-color="blue"></span>
+                  <span class="c-dot dot-amber" data-color="amber"></span>
+                  <span class="c-dot dot-emerald" data-color="emerald"></span>
+                </div>
+                <button class="iot-toggle active" id="btn-light-toggle">ON</button>
+              </div>
+            </div>
+
+            <!-- Prizat Inteligjente -->
+            <div class="hud-iot-item">
+              <div class="iot-info">
+                <span class="iot-icon">🔌</span>
+                <div>
+                  <div class="iot-name">Prizat Inteligjente</div>
+                  <div class="iot-sub" id="iot-plug-sub">245W / 1.1A ngarkesë</div>
+                </div>
+              </div>
+              <button class="iot-toggle active" id="btn-plug-toggle">ON</button>
+            </div>
+
+            <!-- Kyçi Biometrik -->
+            <div class="hud-iot-item">
+              <div class="iot-info">
+                <span class="iot-icon">🔒</span>
+                <div>
+                  <div class="iot-name">Kyçi Biometrik</div>
+                  <div class="iot-sub" id="iot-lock-sub">I KYÇUR (SECURE)</div>
+                </div>
+              </div>
+              <button class="iot-toggle" id="btn-lock-toggle">KYÇ</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. SOCIAL STALKER LIVE FEED (GERÇEK VERİLERLE) -->
+        <div class="hud-widget hud-panel-card" id="widget-social-stalker">
+          <div class="hud-widget-header">
+            <div class="hud-widget-title">
+              <span class="hud-icon">📸</span>
+              <span>SOCIAL STALKER // CANLI İZLEME</span>
+            </div>
+            <button id="btn-hud-open-accounts" class="hud-btn-tag" title="Hesap Bağla">⚙️ HESAPLARI BAĞLA</button>
+          </div>
+
+          <div class="hud-stalker-body">
+            <!-- Direct Inline Account Adder & Scanner -->
+            <div class="stalker-quick-bind-bar">
+              <span class="quick-bind-at">@</span>
+              <input type="text" id="quick-target-input" placeholder="Yeni hesap ekle & canlı tara (örn: lux.coo.1)" autocomplete="off" spellcheck="false" />
+              <button id="btn-quick-target-add" class="quick-bind-btn">➕ BAĞLA & TARA</button>
+            </div>
+
+            <!-- Account Quick Switcher -->
+            <div class="stalker-chips-row" id="stalker-chips-row">
+              <span class="stalk-chip active" data-username="lux.coo.1">@lux.coo.1</span>
+              <span class="stalk-chip" data-username="leohoca">@leohoca</span>
+              <button id="btn-quick-add-target" class="stalk-chip-add">➕ Ekle</button>
+            </div>
+
+            <div class="stalker-target-bar">
+              <div class="target-profile-info">
+                <div class="target-avatar-box">
+                  <img id="stalker-avatar-img" class="target-avatar-img" src="https://scontent.cdninstagram.com/v/t51.82787-19/697140560_18433174552189233_6840410240447457317_n.jpg?stp=dst-jpg_s100x100_tt6&_nc_cat=100&ccb=7-5&_nc_sid=bf7eb4" onerror="this.style.display='none';$('stalker-avatar-icon').style.display='block';" alt="avatar" />
+                  <span id="stalker-avatar-icon" class="target-avatar" style="display:none;">🎯</span>
+                </div>
+                <div>
+                  <div class="target-user" id="stalker-username">@lux.coo.1</div>
+                  <div class="target-status" id="stalker-status-desc">● Canlı Instagram Verisi (Aktif)</div>
+                </div>
+              </div>
+              <button id="btn-stalk-scan-fast" class="hud-mini-btn">🔄 CANLI TARA</button>
+            </div>
+
+            <div class="stalker-stats-grid">
+              <div class="stalker-stat-box">
+                <div class="num" id="stk-followers">6,884</div>
+                <div class="lbl">Gerçek Takipçi</div>
+              </div>
+              <div class="stalker-stat-box">
+                <div class="num" id="stk-following">3,842</div>
+                <div class="lbl">Takip Edilen</div>
+              </div>
+              <div class="stalker-stat-box">
+                <div class="num" id="stk-stories">661</div>
+                <div class="lbl">Gönderi Sayısı</div>
+              </div>
+            </div>
+
+            <!-- Live ticker of stalker events -->
+            <div class="stalker-ticker" id="stalker-ticker">
+              <div class="ticker-item"><span class="ticker-time">[CANLI]</span> <span class="ticker-text">@lux.coo.1 verileri Instagram CDN üzerinden anlık doğrulandı.</span></div>
+            </div>
+
+            <div class="stalker-actions">
+              <button id="btn-stalk-scan" class="hud-sm-btn">🔄 CANLI TARA</button>
+              <button id="btn-stalk-diff-view" class="hud-sm-btn" style="border-color:#00f3ff; color:#00f3ff;">📊 DEĞİŞİM LİSTESİ</button>
+              <button id="btn-stalk-manage" class="hud-sm-btn">🔐 GİRİŞ YAP & HESAPLAR</button>
+              <button id="btn-stalk-open-ig" class="hud-sm-btn">📸 INSTAGRAM'DA AÇ</button>
+              <button id="btn-stalk-leo-analyze" class="hud-sm-btn">🧠 LEO ANALİZİ</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 1: LIVE (Voice & Camera & Orb) -->
+    <section id="tab-live" class="view-tab">
+      <div id="cam-wrap" class="hidden">
+        <video id="cam" autoplay playsinline muted></video>
+        <span class="cam-live">● LIVE CAM</span>
+      </div>
+
+      <div class="orb-wrapper">
+        <canvas id="orb"></canvas>
+        <div class="orb-tap-hint">Prek sferën për të folur / Dokun ve konuş</div>
+      </div>
+
+      <div class="voice-activity-bar">
+        <div id="vu-bar" class="vu-meter"></div>
+      </div>
+
+      <div id="status">LIDHJA PO KRIJOHET…</div>
+
+      <!-- Quick prompts -->
+      <div class="quick-pills">
+        <button class="pill" data-text="Përshëndetje Leo, si mund të më ndihmosh sot?">🇦🇱 Përshëndetje</button>
+        <button class="pill" data-text="Telefonimin analiz et ve durumunu söyle">📊 Analizo Telefonin</button>
+        <button class="pill" data-text="Aktif Instagram takipçi durumunu analiz et">📸 Instagram</button>
+        <button class="pill" data-text="Acil durum numaralarını ve rehberi göster">🚨 Urgjencë 112</button>
+      </div>
+
+      <div class="live-controls">
+        <button id="btn-mic" class="ctl">🎙️ MIKROFONI</button>
+        <button id="btn-cam" class="ctl">📷 KAMERA</button>
+      </div>
+    </section>
+
+    <!-- TAB 2: CHAT (Persistent Chat Log) -->
+    <section id="tab-chat" class="view-tab">
+      <div class="chat-header">
+        <span class="chat-title">💬 Biseda me LEO (leohoca)</span>
+        <button id="btn-clear-chat" class="btn-text-action">Fshij Historikun</button>
+      </div>
+      <div id="log" class="chat-messages">
+        <!-- Messages rendered dynamically -->
+      </div>
+    </section>
+
+    <!-- TAB 3: HUB (Control Center / Tools Hub) -->
+    <section id="tab-hub" class="view-tab">
+      <div class="hub-header">
+        <h2>Qendra e Kontrollit</h2>
+        <p>Mjetet e Inteligjencës LEO & Menaxhimi i Pajisjes</p>
+      </div>
+
+      <div class="hub-grid">
+        <!-- Instagram Tracker -->
+        <div class="hub-card" data-action="run_tool" data-tool="instagram_tracker">
+          <div class="card-icon">📸</div>
+          <div class="card-content">
+            <div class="card-title">Instagram Tracker</div>
+            <div class="card-desc">Ndjekësit, rritja dhe aktiviteti i profileve</div>
+          </div>
+          <div class="card-arrow">➔</div>
+        </div>
+
+        <!-- Post Scheduler -->
+        <div class="hub-card" data-action="run_tool" data-tool="social_post_scheduler">
+          <div class="card-icon">🗓️</div>
+          <div class="card-content">
+            <div class="card-title">Programuesi Social</div>
+            <div class="card-desc">Planifiko postime dhe story në orar</div>
+          </div>
+          <div class="card-arrow">➔</div>
+        </div>
+
+        <!-- Ad Manager -->
+        <div class="hub-card" data-action="run_tool" data-tool="social_ad_manager">
+          <div class="card-icon">🎯</div>
+          <div class="card-content">
+            <div class="card-title">Menaxheri i Reklamave</div>
+            <div class="card-desc">Optimizimi i buxhetit dhe audiencës</div>
+          </div>
+          <div class="card-arrow">➔</div>
+        </div>
+
+        <!-- Smart Home -->
+        <div class="hub-card" data-action="run_tool" data-tool="smart_home_control">
+          <div class="card-icon">🏠</div>
+          <div class="card-content">
+            <div class="card-title">Shtëpia Inteligjente</div>
+            <div class="card-desc">Dritat, kondicioneri, prizat dhe kyçi</div>
+          </div>
+          <div class="card-arrow">➔</div>
+        </div>
+
+        <!-- File Organizer -->
+        <div class="hub-card" data-action="run_tool" data-tool="file_organizer">
+          <div class="card-icon">📁</div>
+          <div class="card-content">
+            <div class="card-title">Organizuesi i Skedarëve</div>
+            <div class="card-desc">Pastrim automatik dhe kategorizim</div>
+          </div>
+          <div class="card-arrow">➔</div>
+        </div>
+
+        <!-- Mail Agent -->
+        <div class="hub-card" data-action="run_tool" data-tool="mail_agent">
+          <div class="card-icon">✉️</div>
+          <div class="card-content">
+            <div class="card-title">Agjenti i Postës (Mail)</div>
+            <div class="card-desc">Email-et e palexuara dhe draftet</div>
+          </div>
+          <div class="card-arrow">➔</div>
+        </div>
+
+        <!-- Location & Navigation -->
+        <div class="hub-card" data-action="run_tool" data-tool="find_location">
+          <div class="card-icon">🧭</div>
+          <div class="card-content">
+            <div class="card-title">Vendndodhja & Harta</div>
+            <div class="card-desc">GPS, koordinatat dhe rruga më e shpejtë</div>
+          </div>
+          <div class="card-arrow">➔</div>
+        </div>
+
+        <!-- Cron Scheduler -->
+        <div class="hub-card" data-action="run_tool" data-tool="cron_scheduler">
+          <div class="card-icon">⏰</div>
+          <div class="card-content">
+            <div class="card-title">Rutinat Automatike</div>
+            <div class="card-desc">Detyra të planifikuara në prapavijë</div>
+          </div>
+          <div class="card-arrow">➔</div>
+        </div>
+
+        <!-- Survival Guide -->
+        <div class="hub-card emergency-card" data-action="run_tool" data-tool="survival_guide">
+          <div class="card-icon">🚨</div>
+          <div class="card-content">
+            <div class="card-title">Urgjenca & Ndihma e Parë</div>
+            <div class="card-desc">112, tërmeti, zjarri dhe protokollet</div>
+          </div>
+          <div class="card-arrow">➔</div>
+        </div>
+
+        <!-- Companion Mode -->
+        <div class="hub-card" data-action="run_tool" data-tool="companion_mode">
+          <div class="card-icon">🌟</div>
+          <div class="card-content">
+            <div class="card-title">Modi Bashkëbisedues</div>
+            <div class="card-desc">Toni miqësor, zyrtar ose motivues</div>
+          </div>
+          <div class="card-arrow">➔</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: TELEMETRY (Telefon Analizi) -->
+    <section id="tab-telemetry" class="view-tab">
+      <!-- ── PAJISJA E LIDHUR AKTUALISHT (CILI TELEFON U LIDH) ── -->
+      <div class="device-hero-card">
+        <div class="device-hero-top">
+          <div class="device-icon-box">
+            <span class="device-avatar-icon">📱</span>
+            <div class="live-radar-ping"></div>
+          </div>
+          <div class="device-hero-titles">
+            <div class="device-status-pill">● PAJISJA E LIDHUR ME LEO</div>
+            <h2 id="tel-device-model" class="device-title-text">Duke identifikuar modelin e telefonit...</h2>
+            <div class="device-subtitle-text" id="tel-device-sub">Linku është hapur nga ky celular</div>
+          </div>
+        </div>
+
+        <div class="device-quick-chips">
+          <div class="chip"><span class="chip-label">Sistemi:</span> <b id="chip-os">Apple iOS</b></div>
+          <div class="chip"><span class="chip-label">IP:</span> <b id="chip-ip">Duke marrë...</b></div>
+          <div class="chip"><span class="chip-label">Operatori:</span> <b id="chip-isp">WiFi / 5G</b></div>
+          <div class="chip"><span class="chip-label">Qyteti:</span> <b id="chip-city">Shqipëri 🇦🇱</b></div>
+          <div class="chip"><span class="chip-label">Grafika:</span> <b id="chip-gpu">Apple GPU</b></div>
+        </div>
+      </div>
+
+      <div class="telemetry-header">
+        <h2>Telemetria e Detajuar</h2>
+        <p>Sensorët, Bateria dhe Gjendja në Kohë Reale</p>
+      </div>
+
+      <div class="telemetry-grid">
+        <div class="metric-card">
+          <div class="metric-icon">🔋</div>
+          <div class="metric-val" id="tel-battery">--%</div>
+          <div class="metric-label" id="tel-charging">Bateria</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon">📶</div>
+          <div class="metric-val" id="tel-network">ONLINE</div>
+          <div class="metric-label" id="tel-speed">Lidhja e Rrjetit</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon">📱</div>
+          <div class="metric-val" id="tel-screen">-- x --</div>
+          <div class="metric-label">Rezolucioni i Ekranit</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon">⚡</div>
+          <div class="metric-val" id="tel-platform">iOS/Android</div>
+          <div class="metric-label">Platforma & Browser</div>
+        </div>
+
+        <div class="metric-card wide-card">
+          <div class="metric-icon">📍</div>
+          <div class="metric-val text-small" id="tel-location">Duke marrë vendndodhjen (GPS)...</div>
+          <div class="metric-label">Koordinatat & Rajoni (GPS)</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon">💾</div>
+          <div class="metric-val text-small" id="tel-storage">Po llogaritet...</div>
+          <div class="metric-label">Hapësira & Kuota</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon">⚙️</div>
+          <div class="metric-val text-small" id="tel-hardware">Procesori & RAM</div>
+          <div class="metric-label">Hardueri i Celularit</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon">🧭</div>
+          <div class="metric-val text-small" id="tel-orientation">Portret</div>
+          <div class="metric-label">Orientimi i Ekranit</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon">🔄</div>
+          <div class="metric-val text-small" id="tel-sync" style="color: var(--emerald);">LIVE ✅</div>
+          <div class="metric-label">Sinkronizimi me LEO</div>
+        </div>
+
+        <div class="metric-card wide-card">
+          <div class="metric-icon">🧠</div>
+          <div class="metric-val text-small" id="tel-ai-status">LEO Live Core: Aktiv (Gemini Live WebSocket)</div>
+          <div class="metric-label">Gjendja e Inteligjencës Artificiale</div>
+        </div>
+      </div>
+
+      <button id="btn-refresh-telemetry" class="ctl" style="margin-top: 14px; width: 100%;">🔄 RIFRESKO ANALIZËN</button>
+    </section>
+  </main>
+
+  <!-- ── 3. CHAT INPUT BAR (visible on live and chat tabs) ──────────────── -->
+  <div id="input-container">
+    <form id="text-form">
+      <input id="text-input" type="text" placeholder="Shkruaj një komandë për Leo..." autocomplete="off">
+      <button type="submit" id="btn-send">➤</button>
+    </form>
+  </div>
+
+  <!-- ── 4. BOTTOM NAVIGATION BAR ─────────────────────────────────────── -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-tab="tab-hud">
+      <span class="nav-icon">⚡</span>
+      <span class="nav-label">HUD</span>
+    </button>
+    <button class="nav-item" data-tab="tab-live">
+      <span class="nav-icon">🎙️</span>
+      <span class="nav-label">LIVE</span>
+    </button>
+    <button class="nav-item" data-tab="tab-chat">
+      <span class="nav-icon">💬</span>
+      <span class="nav-label">BISEDA</span>
+    </button>
+    <button class="nav-item" data-tab="tab-hub">
+      <span class="nav-icon">🎛️</span>
+      <span class="nav-label">KONTROLLI</span>
+    </button>
+    <button class="nav-item" data-tab="tab-telemetry">
+      <span class="nav-icon">📱</span>
+      <span class="nav-label">TELEFONI</span>
+    </button>
+  </nav>
+
+  <!-- ── 5. MODAL FOR TOOL EXECUTION / RESULTS ────────────────────────── -->
+  <div id="tool-modal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-box">
+      <div class="modal-header">
+        <span id="modal-title" class="modal-title">Mjeti LEO</span>
+        <button id="modal-close" class="modal-close">✕</button>
+      </div>
+      <div id="modal-body" class="modal-body">
+        Duke ngarkuar të dhënat...
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 6. ACCOUNT INTEGRATION & INSTAGRAM STALKER MODAL ──────────────── -->
+  <div id="account-modal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-box account-modal-box">
+      <div class="modal-header">
+        <span class="modal-title">🔗 Llogaritë e Lidhur & Hesap Bağlama</span>
+        <button id="account-modal-close" class="modal-close">✕</button>
+      </div>
+      <div class="modal-body acct-modal-body">
+        <!-- 1. Instagram Hesabına Şifre / Oturum ile Giriş Yap -->
+        <div class="acct-section">
+          <div class="acct-sec-title">
+            <span>🔐 Instagram Hesabına Giriş Yap (Oturum Bağlama)</span>
+            <span id="ig-session-badge" class="session-badge offline">● ÇEVRİMDIŞI</span>
+          </div>
+          <div class="acct-input-row">
+            <span class="acct-prefix">@</span>
+            <input type="text" id="my-ig-username" value="leohoca" placeholder="Instagram Kullanıcı Adınız" autocomplete="username" />
+          </div>
+          <div class="acct-input-row" style="margin-top: 6px;">
+            <span class="acct-prefix">🔑</span>
+            <input type="password" id="my-ig-password" placeholder="Instagram Şifreniz" autocomplete="current-password" />
+          </div>
+          <div class="acct-input-row" style="margin-top: 6px;">
+            <span class="acct-prefix">🍪</span>
+            <input type="text" id="my-ig-sessionid" placeholder="veya Session ID Cookie (Opsiyonel)" />
+          </div>
+          <div style="display: flex; gap: 8px; margin-top: 8px;">
+            <button id="btn-login-ig" class="acct-btn-primary" style="flex: 1; padding: 7px;">🚀 GİRİŞ YAP & HESABI BAĞLA</button>
+            <button id="btn-logout-ig" class="acct-btn-primary" style="background: rgba(255,0,85,0.25); border-color: #ff0055; display: none;">ÇIKIŞ</button>
+          </div>
+          <div class="acct-hint" id="ig-session-hint">Hesabınıza giriş yapıldığında LEO, hedef profillerin takipçi ve takip listesini derinlemesine izler ve yeni eklenen/çıkan kişileri anlık tespit eder.</div>
+        </div>
+
+        <!-- 2. Stalk & Takip Edilecek Hedef Hesaplar -->
+        <div class="acct-section">
+          <div class="acct-sec-title">🎯 Stalk & Canlı Takip Edilecek Hedef Hesaplar</div>
+          <div class="acct-input-row">
+            <span class="acct-prefix">@</span>
+            <input type="text" id="target-ig-input" placeholder="hedef_kullanici (örn: lux.coo.1)" />
+            <button id="btn-add-target-ig" class="acct-btn-primary">➕ EKLE & TARA</button>
+          </div>
+          <div class="acct-hint">Hedef profilin takipçi, takip ve gönderi değişiklikleri canlı izlenir.</div>
+
+          <!-- Aktif Takip Listesi -->
+          <div class="tracked-accounts-list" id="tracked-accounts-list">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- 3. Canlı Değişim ve Takipçi Uyarı Listesi (Kim Geldi / Gitti) -->
+        <div class="acct-section">
+          <div class="acct-sec-title">
+            <span>📊 Canlı Değişim Listesi (Kim Eklendi / Çıktı)</span>
+            <button id="btn-refresh-diffs" class="acct-btn-mini">🔄 Yenile</button>
+          </div>
+          <div class="stalker-diff-list" id="stalker-diff-list">
+            <div class="diff-empty">Henüz kaydedilmiş takipçi değişimi yok. Taramalar arka planda devam ediyor.</div>
+          </div>
+        </div>
+
+        <!-- 4. Canlı İzleme & Bildirim Sıklığı -->
+        <div class="acct-section">
+          <div class="acct-sec-title">⏱️ Canlı İzleme & Bildirim Sıklığı</div>
+          <div class="acct-settings-grid">
+            <div class="setting-item">
+              <label>Tarama Sıklığı:</label>
+              <select id="sel-scan-interval" class="acct-select">
+                <option value="1">Her 1 dakikada bir (Ultra Hızlı)</option>
+                <option value="5" selected>Her 5 dakikada bir (Önerilen)</option>
+                <option value="15">Her 15 dakikada bir</option>
+                <option value="30">Her 30 dakikada bir</option>
+              </select>
+            </div>
+            <div class="setting-item">
+              <label>Takipçi Değişimi:</label>
+              <select id="sel-notify-delta" class="acct-select">
+                <option value="always" selected>Anında Uyar (+/-)</option>
+                <option value="summary">Günde 1 Kez Özetle</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 7. PUBLIC MODE KEY SCREEN ────────────────────────────────────── -->
+  <div id="key-screen" class="hidden">
+    <div class="key-box">
+      <div class="key-title">◈ L.E.O</div>
+      <div class="key-sub">Vendosni çelësin tuaj Gemini API për të aktivizuar LEO.</div>
+      <input id="key-input" type="password" placeholder="Gemini API Key" autocomplete="off" spellcheck="false">
+      <button id="key-save">AKTIVIZO</button>
+      <a class="key-link" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Merr çelës falas → aistudio.google.com/apikey</a>
+      <div class="key-note">Krijuesi: leohoca. Çelësi ruhet vetëm në celularin tuaj.</div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+
+</html>
