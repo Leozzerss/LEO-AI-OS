@@ -1,0 +1,12 @@
+# LEO AI / JARVIS macOS Desktop Requirements (Masaüstü ses/kamera için)
+google-genai
+opencv-python
+SpeechRecognition
+pyaudio
+psutil
+Pillow
+requests
+fastapi
+uvicorn
+websockets
+qrcode

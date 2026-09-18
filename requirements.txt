@@ -1,13 +1,9 @@
-# JARVIS macOS — Gerekli paketler
-google-genai
-opencv-python
-SpeechRecognition
-pyaudio
-psutil
-Pillow
-requests
-# Telefon (JARVIS Telefon) özelliği — uygulama içi web sunucusu + QR
+# LEO AI OS — Cloud & Web Server Requirements (Vercel Serverless Compatible)
 fastapi
 uvicorn
+google-genai
+requests
+Pillow
+psutil
 websockets
 qrcode
