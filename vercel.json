@@ -1,22 +1,17 @@
 {
-  "version": 2,
   "cleanUrls": true,
-  "routes": [
+  "rewrites": [
     {
-      "src": "/static/(.*)",
-      "dest": "/jarvis_web/static/$1"
+      "source": "/static/:path*",
+      "destination": "/jarvis_web/static/:path*"
     },
     {
-      "src": "/manifest.json",
-      "dest": "/jarvis_web/static/manifest.json"
+      "source": "/manifest.json",
+      "destination": "/jarvis_web/static/manifest.json"
     },
     {
-      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|json|woff2|woff|ttf|mp3|wav))",
-      "dest": "/jarvis_web/static/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/jarvis_web/static/index.html"
+      "source": "/icon.png",
+      "destination": "/jarvis_web/static/icon.png"
     }
   ]
 }
