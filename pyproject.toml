@@ -1,2 +1,19 @@
+[project]
+name = "leo-ai-os"
+version = "0.1.0"
+description = "LEO AI OS - Personal AI Assistant"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "google-genai",
+    "requests",
+    "Pillow",
+    "psutil",
+    "websockets",
+    "qrcode",
+]
+
 [tool.vercel]
 entrypoint = "jarvis_web.server:app"
