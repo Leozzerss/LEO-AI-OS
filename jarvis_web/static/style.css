@@ -1051,6 +1051,7 @@ main {
 #key-screen.hidden { display: none; }
 
 .key-box {
+  position: relative;
   width: 100%;
   max-width: 360px;
   background: var(--panel-solid);
@@ -1061,6 +1062,29 @@ main {
   flex-direction: column;
   gap: 12px;
   box-shadow: var(--cyan-glow);
+}
+
+.key-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.key-close-btn:hover {
+  color: var(--cyan);
+}
+
+.key-badge {
+  background: rgba(0, 240, 255, 0.15) !important;
+  border-color: rgba(0, 240, 255, 0.5) !important;
+  color: var(--cyan) !important;
+  cursor: pointer;
 }
 
 .key-title {

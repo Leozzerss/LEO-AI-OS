@@ -25,7 +25,7 @@ const S = {
   fatalMsg: null,
   lastLogKey: "",
   public: false,
-  apiKey: "",
+  apiKey: localStorage.getItem("leo_gemini_api_key") || "",
   awaitingKey: false,
   reconnectTimer: null,
   isUnlocked: false,
@@ -641,6 +641,69 @@ document.querySelectorAll(".modal-backdrop").forEach((b) => {
   });
 });
 
+// ── 5.5 KEY MODAL (GEMINI API KEY MANAGEMENT) ─────────────────────────────
+function showKeyModal(errorMsg) {
+  const ks = $("key-screen");
+  if (!ks) return;
+  ks.classList.remove("hidden");
+  const sub = ks.querySelector(".key-sub");
+  if (sub) {
+    if (errorMsg) {
+      sub.textContent = errorMsg;
+      sub.style.color = "#ff4466";
+    } else {
+      sub.textContent = "Vendosni çelësin tuaj Gemini API (AIzaSy...) për të aktivizuar LEO.";
+      sub.style.color = "";
+    }
+  }
+  const inp = $("key-input");
+  if (inp) {
+    inp.value = S.apiKey || "";
+    setTimeout(() => inp.focus(), 250);
+  }
+}
+
+function hideKeyModal() {
+  const ks = $("key-screen");
+  if (ks) ks.classList.add("hidden");
+}
+
+async function saveEnteredKey() {
+  const inp = $("key-input");
+  if (!inp) return;
+  const key = inp.value.trim();
+  if (!key) {
+    alert("Ju lutem vendosni një Gemini API Key!");
+    return;
+  }
+  S.apiKey = key;
+  localStorage.setItem("leo_gemini_api_key", key);
+  hideKeyModal();
+  setStatus("ÇELËSI PO RUAJTE DHE PO LIDHET…", true);
+  try {
+    await fetch("/api/key", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ gemini_api_key: key })
+    });
+  } catch (e) {}
+
+  if (S.ws && S.ws.readyState === WebSocket.OPEN) {
+    S.ws.send(JSON.stringify({ type: "apikey", key }));
+  } else {
+    connect();
+  }
+}
+
+function initKeyModalEvents() {
+  $("btn-open-key")?.addEventListener("click", () => showKeyModal());
+  $("btn-close-key")?.addEventListener("click", () => hideKeyModal());
+  $("key-save")?.addEventListener("click", () => saveEnteredKey());
+  $("key-input")?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") saveEnteredKey();
+  });
+}
+
 // ── 6. WEBSOCKET DHE LIDHJA ME GEMINI LIVE ─────────────────────────────────
 function getToken() {
   const params = new URLSearchParams(location.search);
@@ -733,8 +796,14 @@ function connect() {
 
     switch (obj.type) {
       case "need_key":
-        S.ws.send(JSON.stringify({ type: "apikey", key: S.apiKey }));
-        setStatus("GEMINI LIVE PO LIDHET…");
+        if (obj.text || obj.error) {
+          showKeyModal(obj.text || obj.error);
+        } else if (S.apiKey) {
+          S.ws.send(JSON.stringify({ type: "apikey", key: S.apiKey }));
+          setStatus("GEMINI LIVE PO LIDHET…");
+        } else {
+          showKeyModal();
+        }
         break;
       case "ready":
         S.ready = true;
@@ -821,6 +890,9 @@ function connect() {
         S.fatalMsg = obj.text;
         addLog("sys", "GABIM: " + obj.text);
         setStatus("GABIM: " + obj.text);
+        if (obj.text && (obj.text.includes("API") || obj.text.includes("anahtar") || obj.text.includes("çelës") || obj.text.includes("key") || obj.text.includes("auth"))) {
+          showKeyModal(obj.text);
+        }
         break;
     }
   };
@@ -2119,6 +2191,7 @@ window.addEventListener("DOMContentLoaded", () => {
     loadStalkerDiffList();
   }, 25000);
   initHudEvents();
+  initKeyModalEvents();
   requestAnimationFrame(drawOrb);
   requestAnimationFrame(drawHudSpectrum);
   requestAnimationFrame(drawHudEq);

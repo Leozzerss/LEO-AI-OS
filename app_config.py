@@ -42,10 +42,17 @@ def save_app_config(updates: dict) -> dict:
     return config
 
 
+import os
+
 def get_app_config_value(key: str, default=None):
+    if key == "gemini_api_key":
+        env_val = os.environ.get("GEMINI_API_KEY", "").strip()
+        if env_val:
+            return env_val
     return load_app_config().get(key, default)
 
 
 def has_gemini_api_key() -> bool:
     value = str(get_app_config_value("gemini_api_key", "") or "").strip()
     return bool(value)
+

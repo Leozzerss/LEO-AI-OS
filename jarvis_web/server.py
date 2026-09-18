@@ -49,13 +49,15 @@ except Exception:
     print("[UYARI] tool_defs bulunamadı — araçsız modda çalışılıyor.")
 
 try:
-    from app_config import get_app_config_value
+    from app_config import get_app_config_value, save_app_config
 except Exception:
     def get_app_config_value(key, default=None):
         import os
         if key == "gemini_api_key":
             return os.environ.get("GEMINI_API_KEY", "")
         return default
+    def save_app_config(updates: dict):
+        pass
 
 try:
     from memory.memory_manager import (
@@ -588,15 +590,21 @@ class LiveBridge:
                                       "text": "API anahtarı boş."})
 
     async def run(self):
-        if PUBLIC_MODE:
+        query_key = str(self.ws.query_params.get("gemini_api_key", "") or "").strip()
+        if query_key:
+            api_key = query_key
+        elif PUBLIC_MODE:
             # Her kullanıcı kendi anahtarını girer; sunucuda saklanmaz
             api_key = await self._await_client_api_key()
         else:
             api_key = get_api_key()
             if not api_key:
-                await self.send_json({"type": "error",
-                                      "text": "Gemini API anahtarı bulunamadı."})
-                return
+                await self.send_json({"type": "need_key",
+                                      "text": "Gemini API anahtarı bulunamadı. Lütfen anahtarınızı girin."})
+                api_key = await self._await_client_api_key()
+                if api_key:
+                    save_app_config({"gemini_api_key": api_key})
+                    os.environ["GEMINI_API_KEY"] = api_key
 
         client = genai.Client(api_key=api_key,
                               http_options={"api_version": "v1alpha"})
@@ -617,12 +625,12 @@ class LiveBridge:
             # Geçersiz anahtar / bağlantı hatası — istemciye bildir
             msg = str(e)
             if "API" in msg or "key" in msg.lower() or "auth" in msg.lower() \
-               or "invalid" in msg.lower() or "permission" in msg.lower():
-                await self.send_json({"type": "error",
-                    "text": "API anahtarı geçersiz görünüyor. Kontrol edip tekrar dene."})
+               or "invalid" in msg.lower() or "permission" in msg.lower() or "1008" in msg:
+                await self.send_json({"type": "need_key",
+                    "text": "API anahtarı geçersiz görünüyor. Lütfen geçerli bir Gemini API anahtarı girin."})
             else:
                 await self.send_json({"type": "error",
-                    "text": "Bağlantı hatası. Tekrar denenecek."})
+                    "text": f"Bağlantı hatası: {msg[:100]}"})
             raise
 
     # Tarayıcıdan gelenler → Gemini
@@ -820,6 +828,22 @@ async def index():
 @app.get("/mode")
 async def mode():
     return {"public": PUBLIC_MODE, "name": "LEO", "creator": "leohoca"}
+
+@app.get("/api/key")
+async def get_key_status():
+    key = get_api_key()
+    has_key = bool(key and len(key) > 5)
+    masked = f"{key[:4]}...{key[-4:]}" if has_key else ""
+    return {"has_key": has_key, "masked": masked}
+
+@app.post("/api/key")
+async def set_key(payload: dict):
+    new_key = str(payload.get("gemini_api_key", "") or "").strip()
+    if new_key:
+        save_app_config({"gemini_api_key": new_key})
+        os.environ["GEMINI_API_KEY"] = new_key
+        return {"status": "ok", "saved": True}
+    return {"status": "error", "message": "Çelësi nuk mund të jetë bosh"}
 
 @app.post("/api/telemetry")
 async def receive_telemetry(payload: dict):
