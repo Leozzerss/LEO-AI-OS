@@ -666,7 +666,6 @@ class LiveBridge:
                     api_key = get_api_key()
 
                 if not api_key or len(api_key) < 15:
-                    await self.send_json({"type": "ready", "voice_ready": False})
                     api_key = await self._fallback_loop()
                     if not api_key:
                         continue
