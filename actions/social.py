@@ -144,7 +144,39 @@ def check_instagram_profile_diff(username: str) -> dict | None:
     tracking_data = _load_json(TRACK_FILE, {})
     prev = tracking_data.get(username, {})
     real_data = fetch_real_instagram_profile(username)
+    now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+
     if not (real_data and real_data.get("is_real")):
+        # Eğer hesap daha önce aktif takip ediliyorduysa ve şimdi 404 / erişilemez olduysa (Hesap kapatıldı)
+        err = str((real_data or {}).get("error", "")).lower()
+        if prev.get("followers") and ("404" in err or "not found" in err or "ayrıştırılamadı" in err or "kullanıcı" in err):
+            try:
+                from actions.meta_appeal import submit_meta_unban_appeal
+                appeal_res = submit_meta_unban_appeal(username, reason="Otomatik Tespit: Hesap Kapatıldı / 404 Not Found")
+                ticket_id = appeal_res.get("ticket_id", "META-URGENT")
+            except Exception:
+                ticket_id = "META-URGENT"
+
+            diff_event = {
+                "id": f"diff_suspend_{int(datetime.datetime.now().timestamp())}_{username}",
+                "target": username,
+                "time": now_str,
+                "delta": 0,
+                "delta_str": "KAPATILDI",
+                "type": "suspended",
+                "text": f"🚨 @{username} HESABI KAPATILDI! Meta'ya otomatik itiraz ve hesap açma maili gönderildi (Ref: #{ticket_id})",
+                "followers": "KAPALI",
+                "prev_followers": prev.get("followers", "0"),
+                "ticket_id": ticket_id
+            }
+            changes = prev.get("changes", [])
+            changes.insert(0, diff_event)
+            prev["changes"] = changes[:40]
+            prev["status"] = "SUSPENDED"
+            prev["last_checked"] = now_str
+            tracking_data[username] = prev
+            _save_json(TRACK_FILE, tracking_data)
+            return diff_event
         return None
 
     cur_followers_str = real_data["followers"]
