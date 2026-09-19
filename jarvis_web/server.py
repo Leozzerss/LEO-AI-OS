@@ -110,7 +110,7 @@ except Exception:
 PUBLIC_MODE = os.environ.get("JARVIS_PUBLIC") == "1"
 
 # ── Sabitler ─────────────────────────────────────────────────────────────────
-LIVE_MODEL  = "models/gemini-2.5-flash-native-audio-latest"
+LIVE_MODEL  = "gemini-2.0-flash-exp"
 PROMPT_PATH = BASE_DIR / "core" / "prompt.txt"
 CONFIG_PATH = WEB_DIR / "web_config.json"
 
@@ -157,8 +157,16 @@ def ensure_token() -> str:
 TOKEN = "" if PUBLIC_MODE else ensure_token()
 
 
+def is_valid_gemini_key(key: str) -> bool:
+    k = str(key or "").strip()
+    return bool(k and not k.startswith("AQ.") and len(k) >= 25)
+
+
 def get_api_key() -> str:
-    return str(get_app_config_value("gemini_api_key", "") or "")
+    k = str(get_app_config_value("gemini_api_key", "") or "").strip()
+    if not is_valid_gemini_key(k):
+        return ""
+    return k
 
 
 def load_system_prompt() -> str:
@@ -602,9 +610,42 @@ class LiveBridge:
                 )
             except Exception as e:
                 return f"İtiraz oluşturulurken hata: {e}"
+
+        if any(k in cmd_l for k in ["telefon", "cihaz", "model", "hangi telefon", "neredeyim", "ip", "baglandim", "konum"]):
+            t = get_current_telemetry()
+            dev = t.get("device_model") or t.get("platform") or "Akıllı Telefon"
+            loc = t.get("location_str") or (f"{t.get('city')}, {t.get('country')}" if t.get("city") else "Shkodër, Shqipëri 🇦🇱")
+            ip_addr = t.get("ip") or "Canlı Ağ IP"
+            batt = t.get("battery", "Bilinmiyor")
+            return f"📱 Bağlandığınız Cihaz: {dev}\n📍 Konum: {loc}\n🌐 IP Adresi: {ip_addr}\n🔋 Pil: %{batt}"
+
+        if any(k in cmd_l for k in ["hava", "hava durumu", "derece", "yagmur", "kohe"]):
+            try:
+                from actions.weather import get_weather_summary
+                return get_weather_summary()
+            except Exception:
+                pass
+
+        if any(k in cmd_l for k in ["merhaba", "selam", "gunaydin", "iyi gunler", "tung", "ckemi", "hey leo"]):
+            return "Merhaba efendim! LEO OS sesli ve siber asistanınız olarak 7/24 emrinizde. Sizi dinliyorum, ne yapmamı istersiniz?"
+
+        if any(k in cmd_l for k in ["kimsin", "adin ne", "kush je", "sen kimsin"]):
+            return "Ben LEO — leohoca tarafından geliştirilmiş siber işletim sistemi ve kişisel yapay zeka asistanıyım. Instagram koruma, Meta itiraz motoru ve cihaz telemetrisi ile 7/24 hizmetinizdeyim."
+
+        if any(k in cmd_l for k in ["takip", "takipci", "kimler", "degisim", "stalker"]):
+            try:
+                from actions.social import get_all_recent_changes
+                changes = get_all_recent_changes()
+                if changes:
+                    lines = [f"• {c['username']}: {'+' if c['delta']>0 else ''}{c['delta']} ({c['old_followers']} ➔ {c['new_followers']})" for c in changes[:3]]
+                    return "📊 Son Instagram Takipçi Değişim Raporu:\n" + "\n".join(lines)
+                return "Şu an için takipçi sayılarında ani bir değişim tespit edilmedi. Sistem 7/24 izlemededir."
+            except Exception:
+                pass
+
         # Standart Gemini API ile yanıt üretmeyi dene
         key = get_api_key()
-        if key and len(key) > 10:
+        if key and len(key) >= 25 and not key.startswith("AQ."):
             try:
                 c = genai.Client(api_key=key)
                 resp = await asyncio.to_thread(c.models.generate_content, model="gemini-2.5-flash", contents=cmd)
@@ -612,7 +653,7 @@ class LiveBridge:
                     return resp.text.strip()
             except Exception:
                 pass
-        return f"LEO: '{cmd}' emriniz alındı. Sistem, itiraz motoru ve savunma modülleri 7/24 devrede."
+        return f"LEO: '{cmd}' emriniz alındı. Canlı yapay zeka sesli yanıtları için sağ üstteki 🔑 API butonundan ücretsiz Gemini anahtarınızı ekleyebilirsiniz."
 
     async def _fallback_loop(self) -> str | None:
         """Gemini Live sesli bağlantısı kurulamazsa veya beklenirken WebSocket'i düşürmeden
@@ -635,11 +676,11 @@ class LiveBridge:
                 save_current_telemetry(obj.get("data", {}))
             elif t == "apikey":
                 key = str(obj.get("key", "") or "").strip()
-                if key:
+                if is_valid_gemini_key(key):
                     save_app_config({"gemini_api_key": key})
                     os.environ["GEMINI_API_KEY"] = key
                     return key
-                await self.send_json({"type": "error", "text": "API anahtarı boş."})
+                await self.send_json({"type": "error", "text": "API anahtarı geçersiz (AIzaSy... ile başlamalıdır)."})
             elif t == "text":
                 cmd = str(obj.get("text", "")).strip()
                 if cmd:
@@ -660,12 +701,13 @@ class LiveBridge:
         try:
             while True:
                 query_key = str(self.ws.query_params.get("gemini_api_key", "") or "").strip()
-                if query_key:
+                if query_key and is_valid_gemini_key(query_key):
                     api_key = query_key
                 else:
                     api_key = get_api_key()
 
-                if not api_key or len(api_key) < 15:
+                if not api_key or not is_valid_gemini_key(api_key):
+                    await self.send_json({"type": "need_key", "text": "LEO'nun sesli yapay zeka beynini bağlamak için lütfen geçerli bir Gemini API anahtarı girin (🔑 API butonuna dokunun)."})
                     api_key = await self._fallback_loop()
                     if not api_key:
                         continue
@@ -898,18 +940,18 @@ async def mode():
 @app.get("/api/key")
 async def get_key_status():
     key = get_api_key()
-    has_key = bool(key and len(key) > 5)
+    has_key = is_valid_gemini_key(key)
     masked = f"{key[:4]}...{key[-4:]}" if has_key else ""
     return {"has_key": has_key, "masked": masked}
 
 @app.post("/api/key")
 async def set_key(payload: dict):
     new_key = str(payload.get("gemini_api_key", "") or "").strip()
-    if new_key:
+    if is_valid_gemini_key(new_key):
         save_app_config({"gemini_api_key": new_key})
         os.environ["GEMINI_API_KEY"] = new_key
         return {"status": "ok", "saved": True}
-    return {"status": "error", "message": "Çelësi nuk mund të jetë bosh"}
+    return {"status": "error", "message": "Geçerli bir Gemini API anahtarı girin (AIzaSy... ile başlamalıdır)."}
 
 @app.get("/api/meta/appeals")
 async def get_meta_appeals_endpoint():

@@ -749,6 +749,10 @@ async function saveEnteredKey() {
     alert("Ju lutem vendosni një Gemini API Key!");
     return;
   }
+  if (!key.startsWith("AIzaSy") || key.length < 25) {
+    alert("⚠️ GEÇERSİZ ANAHTAR FORMATI!\n\nGemini API anahtarları her zaman 'AIzaSy...' ile başlar.\nLütfen Google AI Studio'dan (aistudio.google.com/apikey) aldığınız geçerli anahtarı yapıştırın.");
+    return;
+  }
   S.apiKey = key;
   localStorage.setItem("leo_gemini_api_key", key);
   hideKeyModal();
@@ -887,9 +891,13 @@ function connect() {
         setStatus("LEO ËSHTË GATI — SISTEMI LIVE ✅", true);
         break;
       case "need_key":
+        if (S.apiKey && (S.apiKey.startsWith("AQ.") || S.apiKey.length < 25)) {
+          S.apiKey = "";
+          localStorage.removeItem("leo_gemini_api_key");
+        }
         if (obj.text || obj.error) {
           showKeyModal(obj.text || obj.error);
-        } else if (S.apiKey) {
+        } else if (S.apiKey && S.apiKey.startsWith("AIzaSy")) {
           S.ws.send(JSON.stringify({ type: "apikey", key: S.apiKey }));
           setStatus("GEMINI LIVE PO LIDHET…");
         } else {
@@ -909,6 +917,9 @@ function connect() {
         break;
       case "log":
         addLog(obj.who, obj.text);
+        if (obj.who === "jarvis" && obj.text) {
+          speakLeo(obj.text);
+        }
         break;
       case "tool":
         setStatus("PO PËRPUNOHET: " + obj.name, true);
@@ -1087,6 +1098,66 @@ function playAudioChunk(buf) {
   S.speaking = true;
 }
 
+// ── LEO SESLİ YANIT MOTORU (SPEECH SYNTHESIS TTS) ──────────────────────────
+function speakLeo(text) {
+  if (!text || typeof text !== "string") return;
+  if (!window.speechSynthesis) return;
+
+  // Eğer Gemini Live zaten native ses paketi çalıyorsa çakışma olmasın
+  if (S.speaking && S.playingSources && S.playingSources.length > 0) return;
+
+  try {
+    window.speechSynthesis.cancel();
+
+    // Markdown, link, özel sembol ve emojileri temizle
+    let clean = text
+      .replace(/https?:\/\/\S+/g, "")
+      .replace(/[#*`_~|]/g, " ")
+      .replace(/[🛡️🚨✅❌📊📁✉️🧭⏰🌟🎙️📱💬🎛️⚡●]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (!clean || clean.length < 2) return;
+
+    // Çok uzun metinleri (örn. tüm resmi mektup) ilk 2-3 cümlede özet olarak seslendir
+    if (clean.length > 280) {
+      const sentences = clean.split(/[.!?\n]+/);
+      clean = sentences.slice(0, 2).join(". ").trim() + ". Detaylar ekranda listelendi.";
+    }
+
+    const utter = new SpeechSynthesisUtterance(clean);
+    const voices = window.speechSynthesis.getVoices() || [];
+    const trVoice = voices.find(v => (v.lang || "").toLowerCase().includes("tr"));
+    if (trVoice) {
+      utter.voice = trVoice;
+      utter.lang = trVoice.lang;
+    } else {
+      utter.lang = "tr-TR";
+    }
+    utter.rate = 1.05;
+    utter.pitch = 1.0;
+
+    utter.onstart = () => {
+      S.speaking = true;
+      if ($("orb")) $("orb").classList.add("speaking");
+      setStatus("LEO PO FLET…", true);
+    };
+    utter.onend = () => {
+      S.speaking = false;
+      if ($("orb")) $("orb").classList.remove("speaking");
+      setStatus(S.micOn ? "PO JU DËGJOJ…" : "LEO GATI", true);
+    };
+    utter.onerror = () => {
+      S.speaking = false;
+      if ($("orb")) $("orb").classList.remove("speaking");
+    };
+
+    window.speechSynthesis.speak(utter);
+  } catch (e) {
+    console.error("speakLeo error:", e);
+  }
+}
+
 function flushPlayback() {
   for (const src of S.playingSources) {
     try { src.stop(); } catch {}
@@ -1094,6 +1165,9 @@ function flushPlayback() {
   S.playingSources = [];
   S.nextPlayTime = 0;
   S.speaking = false;
+  if (window.speechSynthesis) {
+    try { window.speechSynthesis.cancel(); } catch {}
+  }
 }
 
 // ── iOS & Mobile Safari Audio Engine Unlocker ──────────────────────────────
@@ -1114,6 +1188,13 @@ function unlockAudioEngine() {
     }
     if (S.audioCtx && S.audioCtx.state === "suspended") {
       S.audioCtx.resume().catch(() => {});
+    }
+    if (window.speechSynthesis) {
+      try {
+        const dummy = new SpeechSynthesisUtterance("");
+        dummy.volume = 0;
+        window.speechSynthesis.speak(dummy);
+      } catch {}
     }
   };
 
@@ -1199,6 +1280,55 @@ function setupScriptProcessorFallback(srcNode) {
   S.workletNode = spNode;
 }
 
+// ── WEB SPEECH RECOGNITION (CANLI SES TANIMA - STT) ─────────────────────────
+let _speechRecognizer = null;
+
+function initSpeechRecognition() {
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRec) return null;
+  try {
+    const rec = new SpeechRec();
+    rec.continuous = true;
+    rec.interimResults = false;
+    rec.lang = "tr-TR";
+    rec.maxAlternatives = 1;
+
+    rec.onresult = (event) => {
+      if (!S.micOn) return;
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          const transcript = event.results[i][0].transcript.trim();
+          if (transcript) {
+            console.log("[STT] Algılanan Ses:", transcript);
+            addLog("user", transcript);
+            setStatus("PO PËRPUNOHET…", true);
+            if (S.ws && S.ws.readyState === WebSocket.OPEN) {
+              S.ws.send(JSON.stringify({ type: "text", text: transcript }));
+            }
+          }
+        }
+      }
+    };
+
+    rec.onerror = (e) => {
+      if (e.error !== "no-speech") {
+        console.warn("[STT] Uyarısı:", e.error);
+      }
+    };
+
+    rec.onend = () => {
+      if (S.micOn && _speechRecognizer) {
+        try { _speechRecognizer.start(); } catch (err) {}
+      }
+    };
+
+    return rec;
+  } catch (e) {
+    console.warn("SpeechRecognition oluşturulamadı:", e);
+    return null;
+  }
+}
+
 async function startMic() {
   if (S.micOn) return;
   initAudioContext();
@@ -1263,6 +1393,16 @@ async function startMic() {
     setupScriptProcessorFallback(srcNode);
   }
 
+  // Web Speech Tanıma Başlat
+  try {
+    if (!_speechRecognizer) {
+      _speechRecognizer = initSpeechRecognition();
+    }
+    if (_speechRecognizer) {
+      _speechRecognizer.start();
+    }
+  } catch (e) {}
+
   S.micOn = true;
   $("btn-mic").className = "ctl rec";
   $("btn-mic").textContent = "🔴 MIKROFONI ON";
@@ -1277,6 +1417,13 @@ function stopMic() {
   if (S.micStream) {
     S.micStream.getTracks().forEach((t) => t.stop());
     S.micStream = null;
+  }
+  if (_speechRecognizer) {
+    try { _speechRecognizer.stop(); } catch {}
+    _speechRecognizer = null;
+  }
+  if (window.speechSynthesis) {
+    try { window.speechSynthesis.cancel(); } catch {}
   }
   if (S.workletNode) {
     try { S.workletNode.disconnect(); } catch {}

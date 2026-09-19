@@ -10,7 +10,7 @@ CONFIG_PATH = CONFIG_DIR / "api_keys.json"
 
 
 DEFAULT_CONFIG = {
-    "gemini_api_key": "AQ.Ab8RN6LrPs-e994T89EVBcjH4Pyly9syhl0-yMC-7wFH3Wanrw",
+    "gemini_api_key": "",
     "voice": "Charon",
     "youtube_api_key": "",
     "youtube_channel_handle": "",
@@ -54,5 +54,7 @@ def get_app_config_value(key: str, default=None):
 
 def has_gemini_api_key() -> bool:
     value = str(get_app_config_value("gemini_api_key", "") or "").strip()
-    return bool(value)
+    if not value or value.startswith("AQ.") or len(value) < 25:
+        return False
+    return True
 
