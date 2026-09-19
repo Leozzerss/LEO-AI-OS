@@ -54,7 +54,7 @@ def get_app_config_value(key: str, default=None):
 
 def has_gemini_api_key() -> bool:
     value = str(get_app_config_value("gemini_api_key", "") or "").strip()
-    if not value or value.startswith("AQ.") or len(value) < 25:
+    if not value or len(value) < 25:
         return False
-    return True
+    return bool(value.startswith("AIzaSy") or value.startswith("AQ."))
 

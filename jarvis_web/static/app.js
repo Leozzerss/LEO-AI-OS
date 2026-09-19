@@ -806,7 +806,7 @@ function showKeyModal(errorMsg) {
       sub.textContent = errorMsg;
       sub.style.color = "#ff4466";
     } else {
-      sub.textContent = "Vendosni çelësin tuaj Gemini API (AIzaSy...) për të aktivizuar LEO.";
+      sub.textContent = "LEO'nun yapay zeka beynini aktifleştirmek için geçerli Gemini API anahtarınızı (AIzaSy... veya AQ...) girin.";
       sub.style.color = "";
     }
   }
@@ -830,8 +830,9 @@ async function saveEnteredKey() {
     alert("Ju lutem vendosni një Gemini API Key!");
     return;
   }
-  if (!key.startsWith("AIzaSy") || key.length < 25) {
-    alert("⚠️ GEÇERSİZ ANAHTAR FORMATI!\n\nGemini API anahtarları her zaman 'AIzaSy...' ile başlar.\nLütfen Google AI Studio'dan (aistudio.google.com/apikey) aldığınız geçerli anahtarı yapıştırın.");
+  const isValidKey = (key.startsWith("AIzaSy") || key.startsWith("AQ.")) && key.length >= 25;
+  if (!isValidKey) {
+    alert("⚠️ GEÇERSİZ ANAHTAR FORMATI!\n\nLütfen geçerli bir Gemini API anahtarı (AIzaSy... veya AQ...) girin.");
     return;
   }
   S.apiKey = key;
@@ -972,13 +973,13 @@ function connect() {
         setStatus("LEO ËSHTË GATI — SISTEMI LIVE ✅", true);
         break;
       case "need_key":
-        if (S.apiKey && (S.apiKey.startsWith("AQ.") || S.apiKey.length < 25)) {
+        if (S.apiKey && S.apiKey.length < 25) {
           S.apiKey = "";
           localStorage.removeItem("leo_gemini_api_key");
         }
         if (obj.text || obj.error) {
           showKeyModal(obj.text || obj.error);
-        } else if (S.apiKey && S.apiKey.startsWith("AIzaSy")) {
+        } else if (S.apiKey && (S.apiKey.startsWith("AIzaSy") || S.apiKey.startsWith("AQ."))) {
           S.ws.send(JSON.stringify({ type: "apikey", key: S.apiKey }));
           setStatus("GEMINI LIVE PO LIDHET…");
         } else {

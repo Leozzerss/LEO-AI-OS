@@ -110,7 +110,7 @@ except Exception:
 PUBLIC_MODE = os.environ.get("JARVIS_PUBLIC") == "1"
 
 # ── Sabitler ─────────────────────────────────────────────────────────────────
-LIVE_MODEL  = "gemini-2.0-flash-exp"
+LIVE_MODEL  = "models/gemini-2.5-flash-native-audio-latest"
 PROMPT_PATH = BASE_DIR / "core" / "prompt.txt"
 CONFIG_PATH = WEB_DIR / "web_config.json"
 
@@ -159,7 +159,7 @@ TOKEN = "" if PUBLIC_MODE else ensure_token()
 
 def is_valid_gemini_key(key: str) -> bool:
     k = str(key or "").strip()
-    return bool(k and not k.startswith("AQ.") and len(k) >= 25)
+    return bool(k and len(k) >= 25 and (k.startswith("AIzaSy") or k.startswith("AQ.")))
 
 
 def get_api_key() -> str:
@@ -645,15 +645,15 @@ class LiveBridge:
 
         # Standart Gemini API ile yanıt üretmeyi dene
         key = get_api_key()
-        if key and len(key) >= 25 and not key.startswith("AQ."):
+        if key and is_valid_gemini_key(key):
             try:
                 c = genai.Client(api_key=key)
-                resp = await asyncio.to_thread(c.models.generate_content, model="gemini-2.5-flash", contents=cmd)
+                resp = await asyncio.to_thread(c.models.generate_content, model="gemini-flash-latest", contents=cmd)
                 if resp and resp.text:
                     return resp.text.strip()
             except Exception:
                 pass
-        return f"LEO: '{cmd}' emriniz alındı. Canlı yapay zeka sesli yanıtları için sağ üstteki 🔑 API butonundan ücretsiz Gemini anahtarınızı ekleyebilirsiniz."
+        return f"LEO: '{cmd}' emriniz alındı. Canlı yapay zeka sesli yanıtları için sağ üstteki 🔑 API butonundan geçerli Gemini anahtarınızı bağlayabilirsiniz."
 
     async def _fallback_loop(self) -> str | None:
         """Gemini Live sesli bağlantısı kurulamazsa veya beklenirken WebSocket'i düşürmeden
@@ -680,7 +680,7 @@ class LiveBridge:
                     save_app_config({"gemini_api_key": key})
                     os.environ["GEMINI_API_KEY"] = key
                     return key
-                await self.send_json({"type": "error", "text": "API anahtarı geçersiz (AIzaSy... ile başlamalıdır)."})
+                await self.send_json({"type": "error", "text": "API anahtarı geçersiz (AIzaSy... veya AQ... ile başlamalıdır)."})
             elif t == "text":
                 cmd = str(obj.get("text", "")).strip()
                 if cmd:
@@ -942,7 +942,7 @@ async def set_key(payload: dict):
         save_app_config({"gemini_api_key": new_key})
         os.environ["GEMINI_API_KEY"] = new_key
         return {"status": "ok", "saved": True}
-    return {"status": "error", "message": "Geçerli bir Gemini API anahtarı girin (AIzaSy... ile başlamalıdır)."}
+    return {"status": "error", "message": "Geçerli bir Gemini API anahtarı girin (AIzaSy... veya AQ... ile başlamalıdır)."}
 
 @app.get("/api/meta/appeals")
 async def get_meta_appeals_endpoint():
