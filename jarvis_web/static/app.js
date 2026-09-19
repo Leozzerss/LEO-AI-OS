@@ -1013,9 +1013,7 @@ function connect() {
         break;
       case "log":
         addLog(obj.who, obj.text);
-        if (obj.who === "jarvis" && obj.text) {
-          speakLeo(obj.text);
-        }
+        // Sadece Gemini'den gelen ses aktif olmalıdır. İkinci tarayıcı sesi (TTS) çağrılmaz.
         break;
       case "tool":
         setStatus("PO PËRPUNOHET: " + obj.name, true);
@@ -1198,63 +1196,12 @@ function playAudioChunk(buf) {
   S.speaking = true;
 }
 
-// ── LEO SESLİ YANIT MOTORU (SPEECH SYNTHESIS TTS) ──────────────────────────
+// ── LEO SESLİ YANIT MOTORU (YALNIZCA GEMINI LIVE NATIVE AUDIO AKTİF) ──────────
 function speakLeo(text) {
-  if (!text || typeof text !== "string") return;
-  if (!window.speechSynthesis) return;
-
-  // Eğer Gemini Live zaten native ses paketi çalıyorsa çakışma olmasın
-  if (S.speaking && S.playingSources && S.playingSources.length > 0) return;
-
-  try {
-    window.speechSynthesis.cancel();
-
-    // Markdown, link, özel sembol ve emojileri temizle
-    let clean = text
-      .replace(/https?:\/\/\S+/g, "")
-      .replace(/[#*`_~|]/g, " ")
-      .replace(/[🛡️🚨✅❌📊📁✉️🧭⏰🌟🎙️📱💬🎛️⚡●]/g, "")
-      .replace(/\s+/g, " ")
-      .trim();
-
-    if (!clean || clean.length < 2) return;
-
-    // Çok uzun metinleri (örn. tüm resmi mektup) ilk 2-3 cümlede özet olarak seslendir
-    if (clean.length > 280) {
-      const sentences = clean.split(/[.!?\n]+/);
-      clean = sentences.slice(0, 2).join(". ").trim() + ". Detaylar ekranda listelendi.";
-    }
-
-    const utter = new SpeechSynthesisUtterance(clean);
-    const voices = window.speechSynthesis.getVoices() || [];
-    const trVoice = voices.find(v => (v.lang || "").toLowerCase().includes("tr"));
-    if (trVoice) {
-      utter.voice = trVoice;
-      utter.lang = trVoice.lang;
-    } else {
-      utter.lang = "tr-TR";
-    }
-    utter.rate = 1.05;
-    utter.pitch = 1.0;
-
-    utter.onstart = () => {
-      S.speaking = true;
-      if ($("orb")) $("orb").classList.add("speaking");
-      setStatus("LEO PO FLET…", true);
-    };
-    utter.onend = () => {
-      S.speaking = false;
-      if ($("orb")) $("orb").classList.remove("speaking");
-      setStatus(S.micOn ? "PO JU DËGJOJ…" : "LEO GATI", true);
-    };
-    utter.onerror = () => {
-      S.speaking = false;
-      if ($("orb")) $("orb").classList.remove("speaking");
-    };
-
-    window.speechSynthesis.speak(utter);
-  } catch (e) {
-    console.error("speakLeo error:", e);
+  // Kullanıcı talebi: Sadece Gemini Live'dan gelen orijinal ses aktif olmalıdır.
+  // Çift ses / eko / çakışmayı önlemek için tarayıcının yerel SpeechSynthesis motoru tamamen susturulur.
+  if (window.speechSynthesis) {
+    try { window.speechSynthesis.cancel(); } catch {}
   }
 }
 
