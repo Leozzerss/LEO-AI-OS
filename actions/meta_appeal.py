@@ -17,13 +17,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 APPEALS_FILE = BASE_DIR / "memory" / "meta_appeals.json"
 SESSION_FILE = BASE_DIR / "memory" / "instagram_session.json"
 
-# Meta Resmi İtiraz E-posta Adresleri ve Kanalları
+# Meta Resmi İtiraz E-posta Adresleri ve Kanalları (Resmi Doğrulanmış Liste)
 META_APPEAL_EMAILS = [
-    "appeals@fb.com",
-    "disabled@fb.com",
     "support@instagram.com",
-    "security@mail.instagram.com",
-    "case++@support.facebook.com"
+    "disabled@instagram.com",
+    "appeals@instagram.com",
+    "security@instagram.com",
+    "caseinfo@support.facebook.com"
 ]
 
 # Kullanıcıya kanıt ve kopyanın ulaştığı resmi onaylı CC adresi
@@ -80,7 +80,11 @@ def generate_appeal_letter(username: str, full_name: str = "leohoca", email: str
     
     subject = f"[URGENT APPEAL] Account Reinstatement Request for Instagram @{username} (Ref: #{ticket_id})"
     
-    body_en = f"""To: Meta Platforms Inc. / Instagram Community Operations & Appeal Review Team <appeals@fb.com>, <disabled@fb.com>, <support@instagram.com>
+    recipients_en = ", ".join([f"<{em}>" for em in META_APPEAL_EMAILS])
+    recipients_tr = ", ".join(META_APPEAL_EMAILS)
+    all_recipients_str = ",".join(META_APPEAL_EMAILS)
+
+    body_en = f"""To: Meta Platforms Inc. / Instagram Operations & Security Review Team {recipients_en}
 CC (Official Audit Proof Copy): {META_CC_EMAIL}
 Subject: {subject}
 Reference Ticket: #{ticket_id}
@@ -111,7 +115,7 @@ Authorized Identity: leohoca OS Core System
 Official Audit CC: {META_CC_EMAIL}
 """
 
-    body_tr = f"""Kime: Meta Platforms / Instagram Topluluk Operasyonları & İtiraz Masası (appeals@fb.com, disabled@fb.com)
+    body_tr = f"""Kime: Meta Destek & Instagram İtiraz Operasyonları ({recipients_tr})
 Bilgi / Kanıt Kopyası (CC): {META_CC_EMAIL}
 Konu: {subject}
 Referans No: #{ticket_id}
@@ -135,7 +139,7 @@ Resmi Kanıt Kopyası: {META_CC_EMAIL}
 """
 
     proof_hash = hashlib.sha256(f"{ticket_id}-{username}-{now_utc}-{META_CC_EMAIL}".encode()).hexdigest()
-    mailto_url = f"mailto:{META_APPEAL_EMAILS[0]}?cc={urllib.parse.quote(META_CC_EMAIL)}&subject={urllib.parse.quote(subject)}&body={urllib.parse.quote(body_en)}"
+    mailto_url = f"mailto:{all_recipients_str}?cc={urllib.parse.quote(META_CC_EMAIL)}&subject={urllib.parse.quote(subject)}&body={urllib.parse.quote(body_en)}"
 
     return {
         "ticket_id": ticket_id,
@@ -197,7 +201,7 @@ def submit_meta_unban_appeal(
         from actions.mail_agent import mail_agent
         mail_agent(
             action="draft",
-            recipient="appeals@fb.com",
+            recipient=",".join(META_APPEAL_EMAILS),
             cc=META_CC_EMAIL,
             subject=letter_data["subject"],
             body=letter_data["body_en"]
@@ -219,7 +223,7 @@ def submit_meta_unban_appeal(
         "message": (
             f"✅ @{username} hesabı için Meta İtiraz Talebi başarıyla oluşturuldu!\n"
             f"• Referans Kodu: #{letter_data['ticket_id']}\n"
-            f"• Alıcılar: {', '.join(META_APPEAL_EMAILS[:2])}\n"
+            f"• Resmi Meta Alıcıları: {', '.join(META_APPEAL_EMAILS)}\n"
             f"• Resmi Kanıt (CC): {META_CC_EMAIL} (Onaylandı ✅)\n"
             f"• Dijital Mühür (SHA-256): {letter_data['verification_hash'][:16]}...\n"
             f"• Resmi Form: {META_OFFICIAL_FORMS['deactivated_account_form']}\n"

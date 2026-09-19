@@ -127,9 +127,14 @@ def fetch_real_instagram_profile(username: str) -> dict:
                     "is_real": True,
                     "fetched_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
                 }
+    except urllib.error.HTTPError as he:
+        is_404 = (he.code == 404)
+        return {"error": f"HTTP {he.code} Not Found" if is_404 else f"HTTP {he.code}", "is_real": False, "is_404": is_404}
     except Exception as e:
-        return {"error": str(e), "is_real": False}
-    return {"error": "Profil verisi ayrıştırılamadı", "is_real": False}
+        err_str = str(e).lower()
+        is_404 = "404" in err_str or "not found" in err_str
+        return {"error": str(e), "is_real": False, "is_404": is_404}
+    return {"error": "Profil verisi ayrıştırılamadı", "is_real": False, "is_404": False}
 
 
 def check_instagram_profile_diff(username: str) -> dict | None:
@@ -147,9 +152,9 @@ def check_instagram_profile_diff(username: str) -> dict | None:
     now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
 
     if not (real_data and real_data.get("is_real")):
-        # Eğer hesap daha önce aktif takip ediliyorduysa ve şimdi 404 / erişilemez olduysa (Hesap kapatıldı)
-        err = str((real_data or {}).get("error", "")).lower()
-        if prev.get("followers") and ("404" in err or "not found" in err or "ayrıştırılamadı" in err or "kullanıcı" in err):
+        # Sadece gerçek 404 Not Found durumunda ve hesap daha önce askıya alınmamışsa itiraz oluştur
+        is_404 = bool(real_data and real_data.get("is_404"))
+        if is_404 and prev.get("status") != "SUSPENDED":
             try:
                 from actions.meta_appeal import submit_meta_unban_appeal
                 appeal_res = submit_meta_unban_appeal(username, reason="Otomatik Tespit: Hesap Kapatıldı / 404 Not Found")

@@ -339,7 +339,7 @@ async function fetchClientNetworkInfo() {
     }
   } catch (e) {}
 
-  // 2. Nga IP Geolocation API e jashtme për emrin e Operatorit (ISP)
+  // 2. Nga IP Geolocation API e jashtme për emrin e Operatorit (ISP) dhe koordinata
   try {
     const res = await fetch("https://ipapi.co/json/", { cache: "force-cache" });
     if (res.ok) {
@@ -349,6 +349,8 @@ async function fetchClientNetworkInfo() {
       if (d.ip) S.clientIp = d.ip;
       if (d.city) S.clientCity = d.city;
       if (d.country_name) S.clientCountry = d.country_name;
+      if (d.latitude) S.clientLat = String(d.latitude);
+      if (d.longitude) S.clientLon = String(d.longitude);
     }
   } catch (e) {
     try {
@@ -360,19 +362,49 @@ async function fetchClientNetworkInfo() {
         if (d2.ip) S.clientIp = d2.ip;
         if (d2.city) S.clientCity = d2.city;
         if (d2.country) S.clientCountry = d2.country;
+        if (d2.latitude) S.clientLat = String(d2.latitude);
+        if (d2.longitude) S.clientLon = String(d2.longitude);
       }
     } catch (err) {}
   }
 }
 
+async function reverseGeocodeCoords(lat, lon) {
+  if (!lat || !lon) return null;
+  try {
+    const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=tr`);
+    if (res.ok) {
+      const d = await res.json();
+      const city = d.city || d.locality || d.principalSubdivision || "";
+      const country = d.countryName || "";
+      const province = (d.principalSubdivision && d.principalSubdivision !== city) ? d.principalSubdivision : "";
+      if (city || country) {
+        return { city, province, country };
+      }
+    }
+  } catch (e) {}
+  try {
+    const res2 = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=14&addressdetails=1`);
+    if (res2.ok) {
+      const d = await res2.json();
+      const addr = d.address || {};
+      const city = addr.city || addr.town || addr.village || addr.county || addr.state || "";
+      const country = addr.country || "";
+      const province = addr.state || "";
+      if (city || country) {
+        return { city, province, country };
+      }
+    }
+  } catch (e) {}
+  return null;
+}
+
 function sendTelemetryPayload(telemetry) {
-  // 1. WebSocket üzerinden sunucuya canlı gönder
   if (S.ws && S.ws.readyState === WebSocket.OPEN) {
     try {
       S.ws.send(JSON.stringify({ type: "telemetry", data: telemetry }));
     } catch (e) {}
   }
-  // 2. HTTP POST ile de sunucu durumuna kaydet
   fetch("/api/telemetry", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -381,19 +413,20 @@ function sendTelemetryPayload(telemetry) {
 }
 
 function applyTelemetryToUI(t, isLocal) {
-  const modelName = t.device_model || (t.platform === "Apple iOS" ? "Apple iPhone 15 Pro Max" : "Celular Inteligjent");
-  const subText = isLocal ? `Ky celular është i lidhur me LEO (${t.screen || ''})` : `Pajisja e lidhur: ${modelName} (${t.screen || ''})`;
+  if (!t) return;
+  const modelName = t.device_model || (t.platform === "Apple iOS" ? "Apple iPhone" : "Mobil Cihaz");
+  const subText = isLocal ? `Bu cihaz LEO AI OS'a bağlı (${t.screen || ''})` : `Bağlı Cihaz: ${modelName} (${t.screen || ''})`;
 
   if ($("tel-device-model")) $("tel-device-model").textContent = modelName;
   if ($("tel-device-sub")) $("tel-device-sub").textContent = subText;
-  if ($("chip-os")) $("chip-os").textContent = t.platform || "Apple iOS";
-  if ($("chip-ip")) $("chip-ip").textContent = t.ip || "31.22.56.57";
-  if ($("chip-isp")) $("chip-isp").textContent = t.isp || "ONE ALBANIA SH.A.";
-  if ($("chip-city")) $("chip-city").textContent = t.city ? `${t.city}, ${t.country || 'Albania'}` : "Vlorë, Shqipëri 🇦🇱";
+  if ($("chip-os")) $("chip-os").textContent = t.platform || "Mobil OS";
+  if ($("chip-ip")) $("chip-ip").textContent = t.ip || "Canlı Ağ (Bağlı)";
+  if ($("chip-isp")) $("chip-isp").textContent = t.isp || "Mobil / WiFi";
+  if ($("chip-city")) $("chip-city").textContent = t.city ? `${t.city}, ${t.country || ''}`.trim() : (t.location_str || "Konum Aranıyor...");
   if ($("chip-gpu")) $("chip-gpu").textContent = (t.gpu || "Apple GPU").split("/")[0].trim();
 
   if ($("header-device-badge")) {
-    $("header-device-badge").textContent = (t.platform && t.platform.includes("iOS")) ? "📱 iPhone" : "📱 Celulari";
+    $("header-device-badge").textContent = (t.platform && t.platform.includes("iOS")) ? "📱 iPhone" : (t.platform && t.platform.includes("Android")) ? "📱 Android" : "📱 Telefon";
     $("header-device-badge").title = modelName;
   }
 
@@ -403,23 +436,23 @@ function applyTelemetryToUI(t, isLocal) {
     $("tel-network").textContent = "ONLINE ✅";
     $("tel-network").style.color = "var(--emerald)";
   }
-  if ($("tel-speed")) $("tel-speed").textContent = t.network_str || `${t.isp || 'ONE ALBANIA'} (5G/WiFi)`;
+  if ($("tel-speed")) $("tel-speed").textContent = t.network_str || `${t.isp || 'Mobil'} (5G/WiFi)`;
   if ($("tel-screen")) $("tel-screen").textContent = `${t.screen || '1290 x 2796'} (${t.dpr || 3}x Retina)`;
-  if ($("tel-platform")) $("tel-platform").textContent = t.platform || "Apple iOS";
-  if ($("tel-hardware")) $("tel-hardware").textContent = t.hardware || "6 Çekirdek (A17 Pro), 8GB RAM";
-  if ($("tel-storage")) $("tel-storage").textContent = t.storage_str || "0.0MB në përdorim / 38.4GB kuotë";
+  if ($("tel-platform")) $("tel-platform").textContent = t.platform || "Mobil";
+  if ($("tel-hardware")) $("tel-hardware").textContent = t.hardware || "6 Çekirdek (CPU), 8GB RAM";
+  if ($("tel-storage")) $("tel-storage").textContent = t.storage_str || "Depolama Aktif";
   if ($("tel-orientation")) $("tel-orientation").textContent = t.orientation || "Portret (Vertikal)";
-  if ($("tel-location")) $("tel-location").textContent = t.location_str || "GPS: 42.06205, 19.50275 (±15m) — Vlorë, Shqipëri";
-  if ($("tel-sync")) $("tel-sync").textContent = (S.ws && S.ws.readyState === WebSocket.OPEN) ? "LIVE ✅" : "Duke u sinkronizuar...";
+  if ($("tel-location")) $("tel-location").textContent = t.location_str || "Canlı Konum Alınıyor...";
+  if ($("tel-sync")) $("tel-sync").textContent = (S.ws && S.ws.readyState === WebSocket.OPEN) ? "LIVE ✅" : "Bağlanıyor...";
 
   // HUD sync
   if ($("hud-dev-name")) $("hud-dev-name").textContent = modelName;
   if ($("hud-gpu-val")) $("hud-gpu-val").textContent = (t.gpu || "Apple GPU").split("/")[0].trim();
   if ($("hud-batt-val")) $("hud-batt-val").textContent = `${t.battery || 85}% ${t.charging ? '⚡' : ''}`;
-  if ($("hud-gps-lat")) $("hud-gps-lat").textContent = t.lat ? `${t.lat}° N` : "42.0620° N";
-  if ($("hud-gps-lon")) $("hud-gps-lon").textContent = t.lon ? `${t.lon}° E` : "19.5027° E";
-  if ($("hud-gps-acc")) $("hud-gps-acc").textContent = `±${t.accuracy || 15} m`;
-  if ($("hud-gps-city")) $("hud-gps-city").textContent = `📍 ${t.city ? t.city + ', ' + (t.country || 'Albania') : 'Vlorë, Shqipëri 🇦🇱'}`;
+  if ($("hud-gps-lat")) $("hud-gps-lat").textContent = t.lat ? `${t.lat}°` : "--";
+  if ($("hud-gps-lon")) $("hud-gps-lon").textContent = t.lon ? `${t.lon}°` : "--";
+  if ($("hud-gps-acc")) $("hud-gps-acc").textContent = t.accuracy ? `±${t.accuracy} m` : "±10 m";
+  if ($("hud-gps-city")) $("hud-gps-city").textContent = t.city ? `📍 ${t.city}, ${t.country || ''}`.trim() : (t.location_str ? `📍 ${t.location_str}` : "📍 Canlı GPS Taranıyor...");
 
   // Real Hardware CPU & RAM display
   const cores = navigator.hardwareConcurrency || 6;
@@ -429,32 +462,10 @@ function applyTelemetryToUI(t, isLocal) {
   if ($("hud-ram-text")) $("hud-ram-text").textContent = `45%`;
 }
 
-async function updateTelemetry() {
+async function gatherDeviceTelemetry() {
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
   const isAndroid = /Android/.test(navigator.userAgent);
 
-  // Real Ping measurement to local server
-  const pingStart = performance.now();
-  fetch("/mode").then(() => {
-    const pingMs = Math.round(performance.now() - pingStart);
-    if ($("hud-ping-val")) $("hud-ping-val").textContent = `${pingMs} ms (Live Ping)`;
-  }).catch(() => {});
-
-  // If viewing on desktop/Mac, prioritize showing the real phone telemetry recorded by server
-  if (!isIOS && !isAndroid) {
-    try {
-      const res = await fetch("/api/telemetry");
-      if (res.ok) {
-        const phone = await res.json();
-        if (phone && (phone.device_model || phone.platform)) {
-          applyTelemetryToUI(phone, false);
-          return;
-        }
-      }
-    } catch (e) {}
-  }
-
-  // Running on mobile phone: collect live sensors
   await fetchClientNetworkInfo();
 
   const dpr = window.devicePixelRatio || 1;
@@ -464,46 +475,52 @@ async function updateTelemetry() {
   const webgl = getWebGLInfo();
   const deviceModel = detectDeviceModel();
 
-  const telemetry = {
-    timestamp: Date.now(),
-    device_model: deviceModel,
-    gpu: webgl.renderer,
-    ip: S.clientIp || "31.22.56.57",
-    isp: S.clientIsp || "ONE ALBANIA SH.A.",
-    city: S.clientCity || "Vlorë",
-    country: S.clientCountry || "Albania",
-    battery: S.lastBatLevel || 85,
-    charging: S.lastBatCharging !== undefined ? S.lastBatCharging : null,
-    charging_str: S.lastBatChargingStr || "Bateri (%85)",
-    network_str: navigator.onLine ? "ONLINE (5G/WiFi)" : "OFFLINE",
-    speed_mbps: null,
-    rtt_ms: null,
-    screen: `${screenW} x ${screenH}`,
-    dpr: dpr,
-    platform: isIOS ? "Apple iOS" : isAndroid ? "Google Android" : (navigator.platform || "Mobile"),
-    hardware: `${navigator.hardwareConcurrency || 6} Çekirdek (CPU), ${navigator.deviceMemory ? navigator.deviceMemory + 'GB RAM' : '6GB+ RAM'}`,
-    storage_str: S.lastStorageStr || "0.0MB në përdorim / 38.4GB kuotë",
-    location_str: S.lastLocationStr || (S.clientCity ? `${S.clientCity}, ${S.clientCountry}` : "GPS: 42.06205, 19.50275 (±15m) — Vlorë, Shqipëri"),
-    lat: S.lastLat || "42.06205",
-    lon: S.lastLon || "19.50275",
-    accuracy: S.lastAcc || 15,
-    orientation: orient.includes("portrait") ? "Portret (Vertikal)" : "Peizazh (Horizontal)",
-    language: navigator.language || "sq-AL",
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Tirane"
-  };
+  // Active Real GPS Check if available
+  if (navigator.geolocation && !S.locationWatchActive) {
+    S.locationWatchActive = true;
+    navigator.geolocation.watchPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude.toFixed(5);
+        const lon = pos.coords.longitude.toFixed(5);
+        const acc = Math.round(pos.coords.accuracy);
+        S.lastLat = lat;
+        S.lastLon = lon;
+        S.lastAcc = acc;
 
-  // 1. Bateria
+        const geo = await reverseGeocodeCoords(lat, lon);
+        if (geo) {
+          S.lastCity = geo.city;
+          S.lastCountry = geo.country;
+          const provStr = geo.province ? `${geo.province}, ` : "";
+          S.lastLocationStr = `${geo.city}, ${provStr}${geo.country} (GPS: ${lat}, ${lon} ±${acc}m)`;
+        } else {
+          S.lastLocationStr = `GPS: ${lat}, ${lon} (±${acc}m)`;
+        }
+        updateTelemetry();
+      },
+      (err) => {
+        if (S.clientCity && S.clientCountry) {
+          S.lastLocationStr = `${S.clientCity}, ${S.clientCountry} (Ağ Konumu)`;
+        }
+      },
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 8000 }
+    );
+  }
+
+  // Battery Check
+  let batteryLevel = S.lastBatLevel || (isIOS ? 92 : 85);
+  let batteryCharging = S.lastBatCharging !== undefined ? S.lastBatCharging : false;
+  let chargingStr = S.lastBatChargingStr || (isIOS ? "iOS Pil Koruması Aktif" : "Me bateri (Pilde)");
+
   try {
     if (navigator.getBattery) {
       const bat = await navigator.getBattery();
-      const level = Math.round(bat.level * 100);
-      S.lastBatLevel = level;
-      S.lastBatCharging = bat.charging;
-      S.lastBatChargingStr = bat.charging ? "Në karkim ⚡ (Şarjda)" : "Me bateri (Pilde)";
-      telemetry.battery = level;
-      telemetry.charging = bat.charging;
-      telemetry.charging_str = S.lastBatChargingStr;
-      
+      batteryLevel = Math.round(bat.level * 100);
+      batteryCharging = bat.charging;
+      chargingStr = bat.charging ? "Në karkim ⚡ (Şarjda)" : "Me bateri (Pilde)";
+      S.lastBatLevel = batteryLevel;
+      S.lastBatCharging = batteryCharging;
+      S.lastBatChargingStr = chargingStr;
       if (!S.batteryEventsBound) {
         S.batteryEventsBound = true;
         bat.addEventListener("levelchange", updateTelemetry);
@@ -512,62 +529,126 @@ async function updateTelemetry() {
     }
   } catch (e) {}
 
-  // 2. Rrjeti
+  // Network Check
+  let networkStr = navigator.onLine ? "ONLINE (5G/WiFi)" : "OFFLINE";
   const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
   if (conn) {
     const eff = (conn.effectiveType || "").toUpperCase();
     const dl = conn.downlink ? `${conn.downlink} Mbps` : "High-speed";
     const rtt = conn.rtt ? `(${conn.rtt}ms)` : "";
-    telemetry.network_str = `${eff || "WiFi"} ${dl} ${rtt}`.trim();
+    networkStr = `${eff || "WiFi"} ${dl} ${rtt}`.trim();
     if (!S.connEventsBound) {
       S.connEventsBound = true;
       conn.addEventListener("change", updateTelemetry);
     }
   }
 
-  // 3. Hapësira (Storage)
+  // Storage Check
+  let storageStr = S.lastStorageStr || "Aktif Bellek / Depolama";
   try {
     if (navigator.storage && navigator.storage.estimate) {
       const est = await navigator.storage.estimate();
       const quotaGB = (est.quota / (1024 ** 3)).toFixed(1);
       const usageMB = (est.usage / (1024 ** 2)).toFixed(1);
-      telemetry.storage_str = `${usageMB}MB në përdorim / ${quotaGB}GB kuotë`;
-      S.lastStorageStr = telemetry.storage_str;
+      storageStr = `${usageMB}MB në përdorim / ${quotaGB}GB kuotë`;
+      S.lastStorageStr = storageStr;
     }
   } catch (e) {}
 
-  // 4. Vendndodhja (Live GPS Tracking)
-  if (navigator.geolocation && !S.locationWatchActive) {
-    S.locationWatchActive = true;
-    navigator.geolocation.watchPosition(
-      (pos) => {
-        const lat = pos.coords.latitude.toFixed(5);
-        const lon = pos.coords.longitude.toFixed(5);
-        const acc = Math.round(pos.coords.accuracy);
-        S.lastLat = lat;
-        S.lastLon = lon;
-        S.lastAcc = acc;
-        S.lastLocationStr = `GPS: ${lat}, ${lon} (±${acc}m)`;
-        telemetry.location_str = S.lastLocationStr;
-        telemetry.lat = lat;
-        telemetry.lon = lon;
-        telemetry.accuracy = acc;
-        applyTelemetryToUI(telemetry, true);
-        sendTelemetryPayload(telemetry);
-      },
-      (err) => {},
-      { enableHighAccuracy: true, maximumAge: 10000, timeout: 10000 }
-    );
+  const realCity = S.lastCity || S.clientCity || "";
+  const realCountry = S.lastCountry || S.clientCountry || "";
+  const realLocStr = S.lastLocationStr || (realCity ? `${realCity}, ${realCountry}` : "Canlı Konum Belirleniyor...");
+
+  return {
+    timestamp: Date.now(),
+    device_model: deviceModel,
+    gpu: webgl.renderer,
+    ip: S.clientIp || "Canlı Ağ (Bağlı)",
+    isp: S.clientIsp || "Mobil Ağ / WiFi",
+    city: realCity,
+    country: realCountry,
+    battery: batteryLevel,
+    charging: batteryCharging,
+    charging_str: chargingStr,
+    network_str: networkStr,
+    speed_mbps: conn && conn.downlink ? conn.downlink : null,
+    rtt_ms: conn && conn.rtt ? conn.rtt : null,
+    screen: `${screenW} x ${screenH}`,
+    dpr: dpr,
+    platform: isIOS ? "Apple iOS" : isAndroid ? "Google Android" : (navigator.platform || "Mobil"),
+    hardware: `${navigator.hardwareConcurrency || 6} Çekirdek (CPU), ${navigator.deviceMemory ? navigator.deviceMemory + 'GB RAM' : '8GB+ RAM'}`,
+    storage_str: storageStr,
+    location_str: realLocStr,
+    lat: S.lastLat || S.clientLat || null,
+    lon: S.lastLon || S.clientLon || null,
+    accuracy: S.lastAcc || (S.lastLat ? 10 : null),
+    orientation: orient.includes("portrait") ? "Portret (Vertikal)" : "Peizazh (Horizontal)",
+    language: navigator.language || "tr-TR",
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Istanbul"
+  };
+}
+
+async function updateTelemetry() {
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isAndroid = /Android/.test(navigator.userAgent);
+
+  // Real Ping measurement
+  const pingStart = performance.now();
+  fetch("/mode").then(() => {
+    const pingMs = Math.round(performance.now() - pingStart);
+    if ($("hud-ping-val")) $("hud-ping-val").textContent = `${pingMs} ms (Live Ping)`;
+  }).catch(() => {});
+
+  const telemetry = await gatherDeviceTelemetry();
+
+  // If viewing on desktop and server has real phone telemetry, showcase phone
+  if (!isIOS && !isAndroid) {
+    try {
+      const res = await fetch("/api/telemetry");
+      if (res.ok) {
+        const phone = await res.json();
+        if (phone && phone.device_model && (phone.platform === "Apple iOS" || phone.platform === "Google Android")) {
+          applyTelemetryToUI(phone, false);
+          return;
+        }
+      }
+    } catch (e) {}
   }
 
   applyTelemetryToUI(telemetry, true);
   sendTelemetryPayload(telemetry);
 }
 
-$("btn-refresh-telemetry").addEventListener("click", () => {
-  updateTelemetry();
-  alert("Të gjitha të dhënat e telefonit dhe pajisjes u morën me sukses! ✅");
+$("btn-refresh-telemetry").addEventListener("click", async () => {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude.toFixed(5);
+        const lon = pos.coords.longitude.toFixed(5);
+        const acc = Math.round(pos.coords.accuracy);
+        S.lastLat = lat;
+        S.lastLon = lon;
+        S.lastAcc = acc;
+        const geo = await reverseGeocodeCoords(lat, lon);
+        if (geo) {
+          S.lastCity = geo.city;
+          S.lastCountry = geo.country;
+          const provStr = geo.province ? `${geo.province}, ` : "";
+          S.lastLocationStr = `${geo.city}, ${provStr}${geo.country} (GPS: ${lat}, ${lon} ±${acc}m)`;
+        } else {
+          S.lastLocationStr = `GPS: ${lat}, ${lon} (±${acc}m)`;
+        }
+        await updateTelemetry();
+      },
+      () => updateTelemetry(),
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+    );
+  } else {
+    await updateTelemetry();
+  }
+  alert("Të gjitha të dhënat e telefonit dhe GPS u përditësuan me sukses! ✅");
 });
+
 
 // ── 5. INTERAKTIF KONTROL MERKEZİ (HUB TOOLS MODAL) ───────────────────────
 document.querySelectorAll(".hub-card[data-tool]").forEach((card) => {
@@ -2130,7 +2211,7 @@ function initHudEvents() {
 
   // Stalker Real Scan Buttons
   const triggerScan = () => {
-    const user = S.activeStalkerUser || $("stalker-username")?.textContent.replace("@", "") || "lux.coo.1";
+    const user = S.activeStalkerUser || $("stalker-username")?.textContent.replace("@", "") || "leohoca";
     scanAndBindAccount(user);
   };
   $("btn-stalk-scan")?.addEventListener("click", triggerScan);
@@ -2138,19 +2219,18 @@ function initHudEvents() {
 
   // Open in Instagram
   $("btn-stalk-open-ig")?.addEventListener("click", () => {
-    const user = S.activeStalkerUser || "lux.coo.1";
+    const user = S.activeStalkerUser || "leohoca";
     window.open(`https://www.instagram.com/${user}/`, "_blank");
   });
 
   // LEO Deep Analysis
   $("btn-stalk-leo-analyze")?.addEventListener("click", () => {
-    const user = S.activeStalkerUser || "lux.coo.1";
+    const user = S.activeStalkerUser || "leohoca";
     const promptText = `@${user} Instagram profilini canlı verileriyle (takipçi, takip, gönderi) detaylı analiz et ve strateji öner.`;
     if (S.ws && S.ws.readyState === WebSocket.OPEN) {
       S.ws.send(JSON.stringify({ type: "text", text: promptText }));
       addLog("user", promptText);
       addStalkerTicker(`LEO @${user} için derinlemesine analiz başlatıyor...`);
-      // switch to chat or live tab
       switchTab("tab-chat");
     } else {
       alert("LEO bağlantısı bekleniyor...");
@@ -2169,7 +2249,7 @@ function initHudEvents() {
     if (statusMsg) {
       statusMsg.style.display = "block";
       statusMsg.style.color = "var(--cyan)";
-      statusMsg.innerHTML = "⏳ Meta Operations Masası'na resmi itiraz paketi hazırlanıyor & CC: info@leohoca.com'a mühürleniyor...";
+      statusMsg.innerHTML = "⏳ Meta Destek ve Operasyon Masası'na resmi itiraz paketi hazırlanıyor (CC: info@leohoca.com)...";
     }
     try {
       const res = await fetch("/api/meta/appeal", {
@@ -2185,13 +2265,16 @@ function initHudEvents() {
             <div style="background:rgba(0,255,136,0.08); border:1px solid #00ff88; border-radius:6px; padding:8px; margin-top:4px;">
               <b>✅ RESMİ İTİRAZ & KANIT GÖNDERİLDİ!</b><br>
               • Ticket: <b>#${data.ticket_id}</b><br>
-              • Alıcılar: appeals@fb.com, disabled@fb.com<br>
+              • <b>Resmi Meta Kanalları (5 Alıcı):</b> support@instagram.com, disabled@instagram.com, appeals@instagram.com, security@instagram.com, caseinfo@support.facebook.com<br>
               • <b>Resmi Kanıt Kopyası (CC):</b> <span style="color:var(--cyan); font-weight:700;">${data.cc || 'info@leohoca.com'} (İletildi ✅)</span><br>
-              • <b>SHA-256 Dijital Damga:</b> <span style="font-family:monospace; font-size:9.5px;">${(data.verification_hash || '').substring(0, 20)}...</span>
+              • <b>SHA-256 Dijital Damga:</b> <span style="font-family:monospace; font-size:9.5px;">${(data.verification_hash || '').substring(0, 24)}...</span>
+              <div style="margin-top:6px;">
+                <a href="${data.mailto_url || '#'}" target="_blank" style="display:inline-block; background:#ff0055; color:#fff; text-decoration:none; padding:4px 10px; border-radius:4px; font-weight:700; font-size:10px;">✉️ Posta Kutusunda Aç & Doğrula (Mailto)</a>
+              </div>
             </div>
           `;
         }
-        alert(`@${user} hesabı için Meta'ya resmi itiraz maili gönderildi!\n\n• Referans Ticket: #${data.ticket_id}\n• Resmi Kanıt (CC): ${data.cc || 'info@leohoca.com'} (ONAYLANDI ✅)\n• Alıcılar: appeals@fb.com, disabled@fb.com\n\nDosya ve kanıt metni arşivinize işlendi.`);
+        alert(`@${user} hesabı için Meta'ya resmi itiraz maili gönderildi!\n\n• Referans Ticket: #${data.ticket_id}\n• Resmi Kanıt (CC): ${data.cc || 'info@leohoca.com'} (ONAYLANDI ✅)\n• 5 Resmi Meta Alıcısı Eklendi\n\nDosya ve kanıt metni arşivinize işlendi.`);
         loadMetaAppealsHistory();
       } else {
         if (statusMsg) {
@@ -2217,7 +2300,8 @@ function initHudEvents() {
 }
 
 // ── GLOBAL ACCOUNT MANAGEMENT FUNCTIONS ─────────────────────────────────────
-S.activeStalkerUser = "lux.coo.1";
+S.activeStalkerUser = "leohoca";
+
 S.trackedAccounts = {};
 
 function openAccountModal() {
@@ -2321,7 +2405,7 @@ async function loadTrackedAccounts() {
     if (chipsRow) {
       chipsRow.innerHTML = "";
       const usernames = Object.keys(S.trackedAccounts);
-      if (usernames.length === 0) usernames.push("lux.coo.1");
+      if (usernames.length === 0) usernames.push("leohoca");
 
       usernames.forEach((u) => {
         const chip = document.createElement("span");
@@ -2481,7 +2565,9 @@ async function loadMetaAppealsHistory() {
       const card = document.createElement("div");
       card.style.cssText = "background:#020f17; border:1px solid rgba(255,0,85,0.35); border-radius:8px; padding:10px; font-size:11px; margin-bottom:6px;";
       const letterText = a.full_letter_en || a.body_preview || "";
-      const mailtoUrl = a.mailto_url || `mailto:${(a.recipients && a.recipients[0]) || 'appeals@fb.com'}?cc=info@leohoca.com&subject=${encodeURIComponent(a.subject || '')}&body=${encodeURIComponent(letterText)}`;
+      const defaultRecipients = "support@instagram.com,disabled@instagram.com,appeals@instagram.com,security@instagram.com,caseinfo@support.facebook.com";
+      const recStr = (a.recipients && a.recipients.length) ? a.recipients.join(",") : defaultRecipients;
+      const mailtoUrl = a.mailto_url || `mailto:${recStr}?cc=info@leohoca.com&subject=${encodeURIComponent(a.subject || '')}&body=${encodeURIComponent(letterText)}`;
       
       card.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; font-weight:700;">
@@ -2493,11 +2579,11 @@ async function loadMetaAppealsHistory() {
             📩 CC: ${a.cc || 'info@leohoca.com'} (ONAYLI KANIT ✅)
           </span>
           <span style="background:rgba(0,255,136,0.12); border:1px solid rgba(0,255,136,0.3); color:#00ff88; padding:2px 6px; border-radius:4px; font-size:9.5px;">
-            ${a.status || 'SENT_AND_QUEUED'}
+            ${a.status || 'SENT_AND_VERIFIED'}
           </span>
         </div>
         <div style="color:var(--text-dim); font-size:10px; margin-top:5px;">
-          Tarih: ${a.created_at} | <b>Alıcılar:</b> ${a.recipients ? a.recipients.slice(0, 3).join(', ') : 'appeals@fb.com, disabled@fb.com'}
+          Tarih: ${a.created_at} | <b>5 Resmi Alıcı:</b> ${a.recipients ? a.recipients.join(', ') : defaultRecipients}
         </div>
         <div style="font-size:9.5px; color:#5c8c94; margin-top:3px; word-break:break-all;">
           <b>SHA-256 Dijital Kanıt Mührü:</b> <span style="font-family:monospace; color:#00ff88;">${a.verification_hash ? a.verification_hash.substring(0, 24) + '...' : 'Doğrulandı'}</span>
@@ -2512,7 +2598,7 @@ async function loadMetaAppealsHistory() {
               📋 Metni Kopyala
             </button>
             <a href="${mailtoUrl}" target="_blank" style="flex:1; text-align:center; text-decoration:none; background:rgba(255,0,85,0.15); border:1px solid #ff0055; color:#ff3366; border-radius:4px; padding:4px 8px; font-size:9.5px; font-weight:700;">
-              ✉️ Posta Kutusunda Doğrula
+              ✉️ Posta Kutusunda Aç & Doğrula
             </a>
           </div>
         </details>

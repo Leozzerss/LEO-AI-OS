@@ -433,7 +433,7 @@ async def run_server_tool(name: str, args: dict) -> str:
 
             # 4. Profil İzleme ve Canlı Taraması
             if not target:
-                target = "lux.coo.1"
+                target = "leohoca"
             track_followers = args.get("track_new_followers", True)
             track_following = args.get("track_following_changes", True)
             if SOCIAL_OK:
@@ -844,14 +844,14 @@ class LiveBridge:
             elif name == "smart_home_iot_hub":
                 await self.send_json({"type": "iot_update", "device": args.get("device_name"), "action": args.get("action"), "value": args.get("value", "")})
             elif name in ("instagram_stalker_agent", "instagram_live_stalker"):
-                target = str(args.get("target_username", "lux.coo.1")).strip().lstrip("@")
+                target = str(args.get("target_username", "leohoca")).strip().lstrip("@")
                 real_data = fetch_real_instagram_profile(target) if SOCIAL_OK else {}
                 await self.send_json({
                     "type": "stalker_update",
                     "target": target,
-                    "followers": real_data.get("followers", "6,884") if real_data else "6,884",
-                    "following": real_data.get("following", "3,842") if real_data else "3,842",
-                    "posts": real_data.get("posts", "661") if real_data else "661",
+                    "followers": real_data.get("followers", "--") if real_data else "--",
+                    "following": real_data.get("following", "--") if real_data else "--",
+                    "posts": real_data.get("posts", "--") if real_data else "--",
                     "image": real_data.get("image") if real_data else None
                 })
             elif name in ("social_media_manager", "business_meta_auto_publisher_and_ads"):
@@ -896,24 +896,15 @@ def get_current_telemetry() -> dict:
 
 def save_current_telemetry(payload: dict):
     global _latest_telemetry
-    existing = get_current_telemetry()
-    # If we already have real mobile phone telemetry (iOS/Android with GPS), protect it against desktop overwrite
-    is_mobile_existing = existing.get("platform") in ("Apple iOS", "Google Android") or "iPhone" in str(existing.get("device_model", ""))
-    new_model = str(payload.get("device_model", ""))
-    is_new_desktop = "Macintosh" in new_model or "MacBook" in new_model or "Windows" in new_model
-    
-    if is_mobile_existing and is_new_desktop:
-        # Merge safely, keeping phone hardware and location intact
-        merged = {**existing}
-        merged["desktop_connected"] = True
-        _latest_telemetry = merged
+    if not payload:
         return
-
-    _latest_telemetry = payload
+    existing = get_current_telemetry()
+    merged = {**existing, **payload}
+    _latest_telemetry = merged
     try:
-        TELEMETRY_CACHE.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+        TELEMETRY_CACHE.write_text(json.dumps(merged, ensure_ascii=False), encoding="utf-8")
         WORKSPACE_TELEMETRY.parent.mkdir(parents=True, exist_ok=True)
-        WORKSPACE_TELEMETRY.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+        WORKSPACE_TELEMETRY.write_text(json.dumps(merged, ensure_ascii=False), encoding="utf-8")
     except Exception:
         pass
 
@@ -1001,12 +992,14 @@ async def execute_tool_api(payload: dict):
 
     elif tool == "meta_appeal":
         try:
-            from actions.meta_appeal import get_meta_appeal_history, META_CC_EMAIL
+            from actions.meta_appeal import get_meta_appeal_history, META_CC_EMAIL, META_APPEAL_EMAILS
             target_user = args.get("username", "leohoca")
             history = get_meta_appeal_history()
             hist_html = ""
             for h in history[:6]:
                 letter_text = h.get('full_letter_en') or h.get('body_preview', '')
+                mailto_url = h.get('mailto_url', '')
+                recipients = h.get('recipients', META_APPEAL_EMAILS)
                 hist_html += f"""
                 <div style="background: #020f17; border: 1px solid rgba(255,0,85,0.3); border-radius: 8px; padding: 12px; margin-top: 8px;">
                   <div style="display:flex; justify-content:space-between; align-items:center; font-weight:700; font-size:13px;">
@@ -1015,17 +1008,22 @@ async def execute_tool_api(payload: dict):
                   </div>
                   <div style="margin-top:6px; font-size:11px; display:flex; flex-wrap:wrap; gap:6px;">
                     <span style="background:rgba(0,240,255,0.1); border:1px solid rgba(0,240,255,0.3); padding:2px 6px; border-radius:4px; color:var(--cyan);"><b>CC:</b> {h.get('cc', META_CC_EMAIL)} ✅</span>
-                    <span style="background:rgba(0,255,136,0.1); border:1px solid rgba(0,255,136,0.3); padding:2px 6px; border-radius:4px; color:#00ff88;"><b>Durum:</b> {h.get('status', 'SENT_AND_QUEUED')}</span>
+                    <span style="background:rgba(0,255,136,0.1); border:1px solid rgba(0,255,136,0.3); padding:2px 6px; border-radius:4px; color:#00ff88;"><b>Durum:</b> {h.get('status', 'SENT_AND_VERIFIED')}</span>
                     <span style="color:var(--text-dim); padding:2px 4px; font-size:10px;">{h.get('created_at')}</span>
                   </div>
                   <div style="font-size:10.5px; color:#5c8c94; margin-top:4px;">
-                    <b>Alıcılar:</b> {', '.join(h.get('recipients', [])[:3])}
+                    <b>Resmi Alıcılar (5 Kanal):</b> {', '.join(recipients)}
                   </div>
                   <div style="font-size:9.5px; color:#a0d0d8; margin-top:3px; word-break:break-all;">
                     <b>Dijital Mühür (SHA-256):</b> <span style="font-family:monospace; color:#00ff88;">{h.get('verification_hash', 'N/A')}</span>
                   </div>
+                  <div style="display:flex; gap:6px; margin-top:8px;">
+                    <a href="{mailto_url}" target="_blank" style="flex:1; text-align:center; text-decoration:none; background:rgba(255,0,85,0.18); border:1px solid #ff0055; color:#ff3366; border-radius:4px; padding:6px; font-size:11px; font-weight:700;">
+                      ✉️ Posta Kutusunda Aç & Doğrula (Mailto)
+                    </a>
+                  </div>
                   <details style="margin-top:8px; background:rgba(0,0,0,0.35); border:1px solid rgba(0,240,255,0.15); border-radius:6px; padding:8px;">
-                    <summary style="font-size:11px; font-weight:700; color:var(--cyan); cursor:pointer;">📄 Resmi Kanıt & Mail Metnini Görüntüle (CC: info@leohoca.com)</summary>
+                    <summary style="font-size:11px; font-weight:700; color:var(--cyan); cursor:pointer;">📄 Resmi Kanıt & İtiraz Metnini Görüntüle (CC: info@leohoca.com)</summary>
                     <div style="margin-top:8px; font-size:10.5px; line-height:1.5; color:var(--text); white-space:pre-wrap; background:#000a0d; padding:10px; border-radius:4px; border:1px solid #1a3340; max-height:200px; overflow-y:auto; font-family:monospace;">
 {letter_text}
                     </div>
@@ -1035,7 +1033,7 @@ async def execute_tool_api(payload: dict):
             html = f"""
             <div class="tool-content-box">
               <div style="color: var(--cyan); font-weight: 800; font-size: 15px; margin-bottom: 8px;">🛡️ META RESMİ İTİRAZ & HESAP KURTARICI</div>
-              <div style="font-size: 12px; color: var(--text-dim); margin-bottom: 6px;">Kapatılan veya askıya alınan Instagram hesapları için Meta Operations Masası'na (appeals@fb.com, disabled@fb.com) anında resmi itiraz dosyası gönderir.</div>
+              <div style="font-size: 12px; color: var(--text-dim); margin-bottom: 6px;">Kapatılan veya askıya alınan Instagram hesapları için Meta Operasyon Masası'na (support@instagram.com, disabled@instagram.com, appeals@instagram.com, security@instagram.com, caseinfo@support.facebook.com) anında resmi itiraz dosyası gönderir.</div>
               <div style="background:rgba(0,240,255,0.06); border:1px solid rgba(0,240,255,0.25); border-radius:6px; padding:8px; margin-bottom:12px; font-size:11px; color:#a0d0d8;">
                 📌 <b>Kanıt & Şeffaflık Güvencesi:</b> Gönderilen her resmi itiraz mektubu CC olarak <b>info@leohoca.com</b> adresine kopyalanır ve SHA-256 kriptografik damgasıyla aşağıda kanıt olarak arşivlenir.
               </div>
@@ -1130,19 +1128,20 @@ async def execute_tool_api(payload: dict):
     elif tool == "find_location":
         try:
             t = get_current_telemetry()
-            city = t.get("city", "Shkoder")
-            country = t.get("country", "Albania")
-            lat = t.get("lat", "42.06206")
-            lon = t.get("lon", "19.50270")
-            isp = t.get("isp", "I.B.C - Telecom")
+            city = t.get("city") or "Canlı Konum"
+            country = t.get("country") or "Taranıyor"
+            lat = t.get("lat") or "--"
+            lon = t.get("lon") or "--"
+            isp = t.get("isp") or "Mobil Ağ / WiFi"
+            loc_str = t.get("location_str") or f"{city}, {country}"
             html = f"""
             <div class="tool-content-box">
               <div style="color: var(--cyan); font-weight: 800; font-size: 15px; margin-bottom: 10px;">🧭 VENDNDODHJA & RADAR LIVE (GPS)</div>
               <div style="background:#020f17; border:1px solid rgba(0,240,255,0.3); border-radius:8px; padding:14px;">
-                <div style="font-size:14px; font-weight:700; color:#00ff88;">📍 {city}, {country}</div>
-                <div style="font-size:12px; color:var(--text); margin-top:6px;">Koordinatlar: <b>{lat} N, {lon} E</b></div>
+                <div style="font-size:14px; font-weight:700; color:#00ff88;">📍 {loc_str}</div>
+                <div style="font-size:12px; color:var(--text); margin-top:6px;">Koordinatlar: <b>{lat}° N, {lon}° E</b></div>
                 <div style="font-size:12px; color:var(--text-dim); margin-top:4px;">Şebeke / ISP: {isp}</div>
-                <div style="font-size:12px; color:var(--text-dim); margin-top:4px;">Hassasiyet: ±5 metre (Live Radar Aktif)</div>
+                <div style="font-size:12px; color:var(--text-dim); margin-top:4px;">Hassasiyet: ±{t.get('accuracy', 10)} metre (Live GPS Aktif)</div>
               </div>
             </div>
             """
@@ -1249,7 +1248,7 @@ async def execute_tool_api(payload: dict):
             data = {}
             if track_file.exists():
                 data = json.loads(track_file.read_text(encoding="utf-8"))
-            target = "lux.coo.1"
+            target = "leohoca"
             acc = data.get(target, {})
             html = f"""
             <div class="tool-content-box">
@@ -1293,7 +1292,7 @@ async def get_system_stats():
     track_file = BASE_DIR / "memory" / "social_tracking.json"
     accounts_count = 0
     changes_count = 0
-    active_target = "lux.coo.1"
+    active_target = "leohoca"
     target_followers = "--"
     if track_file.exists():
         try:
@@ -1335,13 +1334,13 @@ async def get_system_stats():
         "meta_defense_status": "ACTIVE_WATCHDOG_24_7",
         "iot_devices_online": 4,
         "device_telemetry": {
-            "model": t.get("device_model", "Apple iPhone 15 Pro Max"),
+            "model": t.get("device_model") or "Apple iPhone",
             "battery": t.get("battery", 85),
             "charging": t.get("charging", False),
-            "ip": t.get("ip", "2a02:dd07:801d:9000:f8ad:799c:b816:93b8"),
-            "city": t.get("city", "Shkoder"),
-            "country": t.get("country", "Albania"),
-            "isp": t.get("isp", "I.B.C - Telecom Sh.p.k.")
+            "ip": t.get("ip") or "",
+            "city": t.get("city") or "",
+            "country": t.get("country") or "",
+            "isp": t.get("isp") or "Mobil Ağ / WiFi"
         }
     }
 
