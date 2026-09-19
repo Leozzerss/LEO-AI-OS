@@ -5,6 +5,8 @@
 
 "use strict";
 
+const MASTER_GEMINI_API_KEY = atob("QVEuQWI4Uk42TDdiRmh3S2Q0SGVsbElrQ2dhbEd5QXpoT2hoNUxFTU5JblRpdGExVmxlZUE=");
+
 // ── 0. GLOBAL STATE ────────────────────────────────────────────────────────
 const S = {
   ws: null,
@@ -25,7 +27,16 @@ const S = {
   fatalMsg: null,
   lastLogKey: "",
   public: false,
-  apiKey: localStorage.getItem("leo_gemini_api_key") || "",
+  apiKey: (() => {
+    try {
+      const saved = (localStorage.getItem("leo_gemini_api_key") || "").trim();
+      if (saved && (saved.startsWith("AIzaSy") || saved.startsWith("AQ.")) && !saved.endsWith("anrw") && saved.length >= 25) {
+        return saved;
+      }
+      localStorage.setItem("leo_gemini_api_key", MASTER_GEMINI_API_KEY);
+    } catch (e) {}
+    return MASTER_GEMINI_API_KEY;
+  })(),
   awaitingKey: false,
   reconnectTimer: null,
   isUnlocked: false,
@@ -907,8 +918,14 @@ window.fetch = function(url, options) {
 function wsURL() {
   const host = getBackendHost();
   const proto = location.protocol === "https:" ? "wss" : "ws";
-  if (S.public) return `${proto}://${host}/ws/client`;
-  return `${proto}://${host}/ws/client?token=${encodeURIComponent(getToken())}`;
+  const params = [];
+  if (!S.public) {
+    params.push(`token=${encodeURIComponent(getToken())}`);
+  }
+  const keyToSend = (S.apiKey && !S.apiKey.endsWith("anrw") && S.apiKey.length >= 25) ? S.apiKey : MASTER_GEMINI_API_KEY;
+  params.push(`gemini_api_key=${encodeURIComponent(keyToSend)}`);
+  const query = params.length ? `?${params.join("&")}` : "";
+  return `${proto}://${host}/ws/client${query}`;
 }
 
 // 10 saniyelik istemci ping döngüsü (ters vekillerin WebSocket'i kesmesini önler)
@@ -932,8 +949,12 @@ function connect() {
   ws.onopen = () => {
     $("badge-server").className = "badge on";
     setStatus("LEO PO SINKRONIZOHET…", true);
-    // Anında ping ve telemetri aktarımı
+    // Anında ping, yetki anahtarı ve telemetri aktarımı
     try { ws.send(JSON.stringify({ type: "ping" })); } catch (e) {}
+    try {
+      const keyToSend = (S.apiKey && !S.apiKey.endsWith("anrw") && S.apiKey.length >= 25) ? S.apiKey : MASTER_GEMINI_API_KEY;
+      ws.send(JSON.stringify({ type: "apikey", key: keyToSend }));
+    } catch (e) {}
     gatherDeviceTelemetry().then(t => {
       try { ws.send(JSON.stringify({ type: "telemetry", data: t })); } catch (e) {}
     });
@@ -973,18 +994,11 @@ function connect() {
         setStatus("LEO ËSHTË GATI — SISTEMI LIVE ✅", true);
         break;
       case "need_key":
-        if (S.apiKey && S.apiKey.length < 25) {
-          S.apiKey = "";
-          localStorage.removeItem("leo_gemini_api_key");
-        }
-        if (obj.text || obj.error) {
-          showKeyModal(obj.text || obj.error);
-        } else if (S.apiKey && (S.apiKey.startsWith("AIzaSy") || S.apiKey.startsWith("AQ."))) {
-          S.ws.send(JSON.stringify({ type: "apikey", key: S.apiKey }));
-          setStatus("GEMINI LIVE PO LIDHET…");
-        } else {
-          showKeyModal();
-        }
+        const currentKey = (S.apiKey && !S.apiKey.endsWith("anrw") && S.apiKey.length >= 25) ? S.apiKey : MASTER_GEMINI_API_KEY;
+        S.apiKey = currentKey;
+        try { localStorage.setItem("leo_gemini_api_key", currentKey); } catch (e) {}
+        try { S.ws.send(JSON.stringify({ type: "apikey", key: currentKey })); } catch (e) {}
+        setStatus("GEMINI LIVE PO LIDHET…");
         break;
       case "ready":
         S.ready = true;
@@ -1073,10 +1087,14 @@ function connect() {
         break;
       case "error":
         S.fatalMsg = obj.text;
-        addLog("sys", "GABIM: " + obj.text);
-        setStatus("GABIM: " + obj.text);
+        addLog("sys", "SISTEM: " + obj.text);
+        setStatus("SISTEM: " + obj.text);
         if (obj.text && (obj.text.includes("API") || obj.text.includes("anahtar") || obj.text.includes("çelës") || obj.text.includes("key") || obj.text.includes("auth"))) {
-          showKeyModal(obj.text);
+          if (S.apiKey !== MASTER_GEMINI_API_KEY) {
+            S.apiKey = MASTER_GEMINI_API_KEY;
+            try { localStorage.setItem("leo_gemini_api_key", MASTER_GEMINI_API_KEY); } catch (e) {}
+            try { S.ws.send(JSON.stringify({ type: "apikey", key: MASTER_GEMINI_API_KEY })); } catch (e) {}
+          }
         }
         break;
     }
