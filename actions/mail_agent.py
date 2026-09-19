@@ -9,7 +9,7 @@ import subprocess
 import urllib.parse
 
 
-def mail_agent(action: str = "unread", query: str = "", recipient: str = "", subject: str = "", body: str = "") -> str:
+def mail_agent(action: str = "unread", query: str = "", recipient: str = "", subject: str = "", body: str = "", cc: str = "") -> str:
     """
     E-posta işlemlerini yürütür.
     action: 'unread' (okunmamış e-postaları listele/özetle) | 'search' (arama yap) | 'draft' (taslak oluştur) | 'send' (gönder)
@@ -17,6 +17,7 @@ def mail_agent(action: str = "unread", query: str = "", recipient: str = "", sub
     recipient: Alıcı e-posta adresi (taslak için)
     subject: E-posta konusu
     body: E-posta içeriği
+    cc: Bilgi (CC) e-posta adresi (Örn: info@leohoca.com)
     """
     action = (action or "unread").strip().lower()
 
@@ -27,9 +28,11 @@ def mail_agent(action: str = "unread", query: str = "", recipient: str = "", sub
             return "Apple Mail uygulaması açıldı."
 
         # mailto linki ile Mail uygulamasında taslak oluştur
-        mailto_url = f"mailto:{recipient}?subject={urllib.parse.quote(subject)}&body={urllib.parse.quote(body)}"
+        cc_part = f"&cc={urllib.parse.quote(cc)}" if cc else ""
+        mailto_url = f"mailto:{recipient}?subject={urllib.parse.quote(subject)}{cc_part}&body={urllib.parse.quote(body)}"
         subprocess.run(["open", mailto_url], check=False)
-        return f"✉️ '{recipient}' için e-posta taslağı hazırlandı (Konu: {subject or 'Konusuz'})."
+        cc_msg = f" (CC: {cc})" if cc else ""
+        return f"✉️ '{recipient}' için e-posta taslağı hazırlandı{cc_msg} (Konu: {subject or 'Konusuz'})."
 
     # Okunmamış veya arama: AppleScript ile Apple Mail sorgusu
     if action == "unread" or action == "search":
