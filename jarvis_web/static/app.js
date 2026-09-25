@@ -5,6 +5,18 @@
 
 "use strict";
 
+// ── KESİN ENGELLEME: Tarayıcının ikinci yerel robotik sesini (SpeechSynthesis) kökten devre dışı bırak
+(function() {
+  if (typeof window !== "undefined" && window.speechSynthesis) {
+    try {
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak = function() { return false; };
+      window.speechSynthesis.pause = function() {};
+      window.speechSynthesis.resume = function() {};
+    } catch(e) {}
+  }
+})();
+
 const MASTER_GEMINI_API_KEY = atob("QVEuQWI4Uk42TDdiRmh3S2Q0SGVsbElrQ2dhbEd5QXpoT2hoNUxFTU5JblRpdGExVmxlZUE=");
 
 // ── 0. GLOBAL STATE ────────────────────────────────────────────────────────
@@ -1235,13 +1247,6 @@ function unlockAudioEngine() {
     }
     if (S.audioCtx && S.audioCtx.state === "suspended") {
       S.audioCtx.resume().catch(() => {});
-    }
-    if (window.speechSynthesis) {
-      try {
-        const dummy = new SpeechSynthesisUtterance("");
-        dummy.volume = 0;
-        window.speechSynthesis.speak(dummy);
-      } catch {}
     }
   };
 

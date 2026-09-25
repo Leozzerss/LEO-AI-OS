@@ -12,7 +12,22 @@
   <link rel="manifest" href="/static/manifest.json">
   <link rel="apple-touch-icon" href="/static/icon.png">
   <link rel="icon" type="image/png" href="/static/icon.png">
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/style.css?v=20260925_only_gemini_voice">
+  <script>
+    // KESİN ENGELLEME: Tarayıcının ikinci robotik sesini (SpeechSynthesis/TTS) kökten devre dışı bırak
+    (function() {
+      if (typeof window !== "undefined") {
+        try {
+          if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+            window.speechSynthesis.speak = function() { return false; };
+            window.speechSynthesis.pause = function() {};
+            window.speechSynthesis.resume = function() {};
+          }
+        } catch(e) {}
+      }
+    })();
+  </script>
 </head>
 
 <body>
@@ -810,7 +825,7 @@
     </div>
   </div>
 
-  <script src="/static/app.js"></script>
+  <script src="/static/app.js?v=20260925_only_gemini_voice"></script>
 </body>
 
 </html>
