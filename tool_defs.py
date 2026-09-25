@@ -429,6 +429,44 @@ TOOL_DECLARATIONS = [
         }
     },
     {
+        "name": "create_whatsapp_sales_campaign",
+        "description": (
+            "WhatsApp üzerinden müşteriye veya kişiye özel indirimli teklif, ikna edici mesaj ve canlı sesli görüşme odası hazırlar. "
+            "Kullanıcı 'Ahmet'e bu teklifi yap', 'Leo'yu WhatsApp'tan ara, şu kadar indirim yap', "
+            "'Müşteriye WhatsApp'tan ulaş ve özellikleri anlat' dediğinde kullan."
+        ),
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "recipient_name": {
+                    "type": "STRING",
+                    "description": "Müşterinin veya teklif verilecek kişinin adı (Örn: 'Leo', 'Ahmet Bey')"
+                },
+                "phone_number": {
+                    "type": "STRING",
+                    "description": "Varsa telefon numarası (Örn: +905551234567)"
+                },
+                "product_name": {
+                    "type": "STRING",
+                    "description": "Sunulan ürün, paket veya hizmetin adı"
+                },
+                "discount": {
+                    "type": "STRING",
+                    "description": "Müşteriye özel tanımlanan indirim oranı veya fiyat avantajı (Örn: '%25 İndirim', '750 TL')"
+                },
+                "features": {
+                    "type": "STRING",
+                    "description": "Ürünün/paketin öne çıkan özellikleri (virgülle ayrılmış)"
+                },
+                "custom_notes": {
+                    "type": "STRING",
+                    "description": "Varsa ek talimatlar, pazarlık kuralları veya kişiye özel notlar"
+                }
+            },
+            "required": ["recipient_name", "discount"]
+        }
+    },
+    {
         "name": "save_whatsapp_contact",
         "description": (
             "Sık kullanılan bir WhatsApp kişisini adı ve telefon numarasıyla kalıcı belleğe kaydeder. "

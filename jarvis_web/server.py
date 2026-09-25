@@ -121,7 +121,7 @@ SERVER_TOOLS = {
     "get_weather", "save_memory", "delete_memory", "survival_guide", "companion_mode", "find_location",
     "sys_info", "get_phone_telemetry", "get_device_telemetry", "control_mobile_app", "voice_command_listener",
     "instagram_stalker_agent", "instagram_live_stalker", "social_media_manager", "business_meta_auto_publisher_and_ads",
-    "smart_home_iot_hub", "survival_companion_mode", "apply_command_center_ui"
+    "smart_home_iot_hub", "survival_companion_mode", "apply_command_center_ui", "create_whatsapp_sales_campaign"
 }
 # Tarayıcıya yönlendirilen araçlar
 CLIENT_TOOLS = {"toggle_webcam", "apply_command_center_ui"}
@@ -498,6 +498,28 @@ async def run_server_tool(name: str, args: dict) -> str:
         if name == "apply_command_center_ui":
             return "🎨 LEO HUD Cyber Command Center u aplikua: Neon Cyan (#00f3ff), Spectrum Visualizer dhe 5 panelet e të dhënave janë aktive!"
 
+        if name == "create_whatsapp_sales_campaign":
+            try:
+                from actions.whatsapp_sales_agent import create_sales_campaign
+                camp = create_sales_campaign(
+                    recipient_name=args.get("recipient_name", ""),
+                    phone_number=args.get("phone_number", ""),
+                    product_name=args.get("product_name", "LEO AI Akıllı Otomasyon Paketi"),
+                    discount=args.get("discount", "%20 İndirim"),
+                    features=args.get("features", "7/24 Kesintisiz Takip, Meta Hesap Koruma"),
+                    custom_notes=args.get("custom_notes", "")
+                )
+                return (
+                    f"✅ WhatsApp Satış ve Arama Kampanyası Hazırlandı:\n"
+                    f"• Müşteri: {camp['recipient_name']}\n"
+                    f"• İndirim / Teklif: {camp['discount']}\n"
+                    f"• Canlı Görüşme Odası: {camp['call_url']}\n"
+                    f"• WhatsApp Direkt Mesaj Linki: {camp['whatsapp_direct_url']}\n\n"
+                    f"Mesaj Metni:\n{camp['message_text']}"
+                )
+            except Exception as e:
+                return f"WhatsApp satış kampanyası oluşturulurken hata: {e}"
+
         if name == "find_location":
             t = get_current_telemetry()
             if t and t.get("location_str"):
@@ -517,6 +539,30 @@ class LiveBridge:
         self.session = None
 
     def _build_config(self) -> types.LiveConnectConfig:
+        room_id = str(self.ws.query_params.get("room", "") or "").strip()
+        if room_id:
+            try:
+                from actions.whatsapp_sales_agent import get_sales_campaign, build_sales_system_prompt
+                camp = get_sales_campaign(room_id)
+                if camp:
+                    sales_prompt = build_sales_system_prompt(camp)
+                    return types.LiveConnectConfig(
+                        response_modalities=["AUDIO"],
+                        output_audio_transcription={},
+                        input_audio_transcription={},
+                        system_instruction=sales_prompt,
+                        tools=[],
+                        speech_config=types.SpeechConfig(
+                            voice_config=types.VoiceConfig(
+                                prebuilt_voice_config=types.PrebuiltVoiceConfig(
+                                    voice_name="Charon"
+                                )
+                            )
+                        ),
+                    )
+            except Exception as e:
+                print(f"[Sales Agent Error] {e}")
+
         parts = [
             f"[ŞU ANKİ ZAMAN]\n{datetime.datetime.now().strftime('%A, %d %B %Y — %H:%M')}\n\n"
         ]
@@ -985,6 +1031,59 @@ async def submit_meta_appeal_endpoint(payload: dict):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+@app.get("/call")
+async def call_room_page():
+    return FileResponse(
+        WEB_DIR / "static" / "call.html",
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
+    )
+
+@app.get("/api/whatsapp/campaigns")
+async def get_whatsapp_campaigns_api():
+    try:
+        from actions.whatsapp_sales_agent import list_sales_campaigns
+        return list_sales_campaigns()
+    except Exception as e:
+        return []
+
+@app.get("/api/whatsapp/campaign/{room_id}")
+async def get_whatsapp_campaign_by_id_api(room_id: str):
+    try:
+        from actions.whatsapp_sales_agent import get_sales_campaign
+        camp = get_sales_campaign(room_id)
+        if camp:
+            return camp
+        return {"status": "error", "message": "Kampanya bulunamadı."}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.post("/api/whatsapp/campaign")
+async def create_whatsapp_campaign_api(payload: dict):
+    try:
+        from actions.whatsapp_sales_agent import create_sales_campaign
+        recipient = str(payload.get("recipient_name", "")).strip()
+        phone = str(payload.get("phone_number", "")).strip()
+        product = str(payload.get("product_name", "LEO AI Akıllı Otomasyon Paketi")).strip()
+        discount = str(payload.get("discount", "%20 İndirim")).strip()
+        features = str(payload.get("features", "7/24 Kesintisiz Takip, Meta Hesap Koruma")).strip()
+        notes = str(payload.get("custom_notes", "")).strip()
+
+        camp = create_sales_campaign(
+            recipient_name=recipient,
+            phone_number=phone,
+            product_name=product,
+            discount=discount,
+            features=features,
+            custom_notes=notes
+        )
+        return {"status": "ok", "campaign": camp}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
 @app.post("/api/tool/execute")
 async def execute_tool_api(payload: dict):
     tool = str(payload.get("tool", "")).strip()
@@ -1125,6 +1224,60 @@ async def execute_tool_api(payload: dict):
               <div style="color: var(--cyan); font-weight: 800; font-size: 15px; margin-bottom: 10px;">🗓️ PROGRAMUESI I POSTIMEVE & HİKAYE ZAMANLAYICI</div>
               <div style="font-size:12px; color:var(--text-dim); margin-bottom:12px;">Sosyal medya hesaplarınız için otomatik paylaşım takvimi (7/24 Bulut Poller Aktif).</div>
               {content_block}
+            </div>
+            """
+            return {"status": "ok", "html": html}
+        except Exception as e:
+            return {"status": "error", "text": str(e)}
+
+    elif tool == "whatsapp_sales":
+        try:
+            from actions.whatsapp_sales_agent import list_sales_campaigns
+            camps = list_sales_campaigns()
+            history_rows = ""
+            for c in camps[:6]:
+                history_rows += f"""
+                <div style="background: rgba(0,240,255,0.04); border: 1px solid rgba(0,240,255,0.18); border-radius: 8px; padding: 10px; margin-bottom: 8px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <b style="color:#00f3ff; font-size:14px;">{c.get('recipient_name')}</b>
+                    <span style="background:#25d366; color:#020b12; font-weight:700; font-size:11px; padding:2px 8px; border-radius:10px;">{c.get('discount')}</span>
+                  </div>
+                  <div style="color:#94a3b8; font-size:12px; margin:4px 0;">{c.get('product_name')}</div>
+                  <div style="display:flex; gap:8px; margin-top:8px;">
+                    <a href="{c.get('whatsapp_direct_url')}" target="_blank" style="background:#25d366; color:#000; text-decoration:none; font-size:11px; font-weight:700; padding:5px 12px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">💬 WhatsApp Mesajı</a>
+                    <a href="{c.get('call_url')}" target="_blank" style="background:#00f3ff; color:#000; text-decoration:none; font-size:11px; font-weight:700; padding:5px 12px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">📞 Sesli Arama Odası</a>
+                  </div>
+                </div>
+                """
+
+            html = f"""
+            <div class="tool-content-box">
+              <div style="color: #25d366; font-weight: 800; font-size: 15px; margin-bottom: 10px; display:flex; align-items:center; gap:8px;">
+                <span>📞 WHATSAPP AI SATIŞ & ARAMA AJANI (%100 ÜCRETSİZ)</span>
+              </div>
+              <div style="background: rgba(37,211,102,0.08); border: 1px solid rgba(37,211,102,0.25); border-radius: 8px; padding: 12px; margin-bottom: 15px; font-size: 12px; line-height: 1.5; color:#cbd5e1;">
+                İstediğiniz müşteriyi veya kişiyi WhatsApp üzerinden insan gibi aratabilir, teklif sunabilir ve pazarlık yaptırabilirsiniz.
+              </div>
+
+              <!-- Hızlı Teklif & Arama Formu -->
+              <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:15px; background:rgba(0,0,0,0.3); padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
+                <input id="sales-recipient" type="text" placeholder="Kişi / Müşteri Adı (Örn: Leo, Ahmet)" style="background:#030f18; border:1px solid rgba(0,240,255,0.3); color:#fff; padding:8px 12px; border-radius:6px; font-size:13px; outline:none;">
+                <input id="sales-phone" type="text" placeholder="WhatsApp Telefon Numarası (Örn: +905551234567)" style="background:#030f18; border:1px solid rgba(0,240,255,0.3); color:#fff; padding:8px 12px; border-radius:6px; font-size:13px; outline:none;">
+                <input id="sales-product" type="text" placeholder="Ürün / Hizmet (Örn: Instagram Kurtarma Paketi)" value="LEO AI Otomasyon Paketi" style="background:#030f18; border:1px solid rgba(0,240,255,0.3); color:#fff; padding:8px 12px; border-radius:6px; font-size:13px; outline:none;">
+                <input id="sales-discount" type="text" placeholder="İndirim Oranı / Fiyat (Örn: %25 İndirim, 750 TL)" value="%25 İndirim" style="background:#030f18; border:1px solid rgba(0,240,255,0.3); color:#fff; padding:8px 12px; border-radius:6px; font-size:13px; outline:none;">
+                <input id="sales-features" type="text" placeholder="Özellikler (virgülle ayırın)" value="7/24 Takip, Meta Koruma, Özel Destek" style="background:#030f18; border:1px solid rgba(0,240,255,0.3); color:#fff; padding:8px 12px; border-radius:6px; font-size:13px; outline:none;">
+                
+                <button onclick="createSalesOfferFromModal()" style="margin-top:6px; background:linear-gradient(135deg, #25d366, #00f3ff); border:none; color:#020d18; font-weight:800; padding:10px 14px; border-radius:6px; cursor:pointer; font-size:13px;">
+                  🚀 TEKLİF & SESLİ ARAMA ODASINI OLUŞTUR
+                </button>
+              </div>
+
+              <div id="sales-result-box" style="display:none; margin-bottom:15px;"></div>
+
+              <div style="font-weight:700; color:#94a3b8; font-size:12px; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">Son Hazırlanan Teklifler & Aramalar:</div>
+              <div id="sales-history-list">
+                {history_rows or '<div style="color:#64748b; font-size:12px; text-align:center; padding:10px;">Henüz aktif teklif yok.</div>'}
+              </div>
             </div>
             """
             return {"status": "ok", "html": html}

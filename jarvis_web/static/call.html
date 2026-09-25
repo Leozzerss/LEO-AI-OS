@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#03080c">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>LEO AI — Canlı Sesli Görüşme</title>
+  <link rel="icon" type="image/png" href="/static/icon.png">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      background: radial-gradient(circle at 50% 20%, #081726 0%, #03080c 100%);
+      color: #fff;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 2.5rem 1.5rem 3.5rem;
+      overflow: hidden;
+      position: relative;
+    }
+    .ambient-glow {
+      position: absolute;
+      top: 15%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 320px;
+      height: 320px;
+      background: radial-gradient(circle, rgba(0, 243, 255, 0.15) 0%, rgba(0, 255, 136, 0.08) 50%, transparent 70%);
+      filter: blur(50px);
+      pointer-events: none;
+      z-index: 0;
+      animation: pulseGlow 4s ease-in-out infinite alternate;
+    }
+    @keyframes pulseGlow {
+      0% { transform: translateX(-50%) scale(0.9); opacity: 0.6; }
+      100% { transform: translateX(-50%) scale(1.15); opacity: 1; }
+    }
+    .caller-header {
+      z-index: 2;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .verified-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0, 243, 255, 0.1);
+      border: 1px solid rgba(0, 243, 255, 0.3);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #00f3ff;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .caller-avatar-wrap {
+      position: relative;
+      margin: 1.5rem 0 1rem;
+    }
+    .caller-avatar {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #00f3ff, #00ff88);
+      padding: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 35px rgba(0, 243, 255, 0.35);
+      position: relative;
+    }
+    .avatar-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: #030d17;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #00f3ff;
+      overflow: hidden;
+    }
+    .call-pulse-ring {
+      position: absolute;
+      top: -10px;
+      left: -10px;
+      right: -10px;
+      bottom: -10px;
+      border-radius: 50%;
+      border: 2px solid rgba(0, 255, 136, 0.6);
+      animation: callRing 2s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+    }
+    @keyframes callRing {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      100% { transform: scale(1.4); opacity: 0; }
+    }
+    .caller-name {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: -0.5px;
+    }
+    .call-status {
+      font-size: 0.95rem;
+      color: #00ff88;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .call-status.connecting {
+      color: #00f3ff;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #00ff88;
+      display: inline-block;
+      animation: blinkDot 1.5s infinite;
+    }
+    @keyframes blinkDot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* Live Voice Spectrum Waveform */
+    .wave-container {
+      z-index: 2;
+      width: 100%;
+      max-width: 320px;
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      margin: 1.5rem 0;
+    }
+    .wave-bar {
+      width: 5px;
+      height: 8px;
+      background: linear-gradient(180deg, #00f3ff, #00ff88);
+      border-radius: 3px;
+      transition: height 0.08s ease;
+    }
+
+    /* Offer Highlights Card */
+    .offer-card {
+      z-index: 2;
+      width: 100%;
+      max-width: 360px;
+      background: rgba(7, 21, 36, 0.7);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(0, 243, 255, 0.25);
+      border-radius: 18px;
+      padding: 1.1rem 1.25rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+    .offer-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.6rem;
+    }
+    .offer-badge {
+      background: linear-gradient(135deg, #ff0055, #ff5500);
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .offer-product {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #ffffff;
+      margin-bottom: 0.4rem;
+    }
+    .offer-features {
+      font-size: 0.8rem;
+      color: #94a3b8;
+      line-height: 1.4;
+    }
+
+    /* Subtitle / AI Transcript live bubble */
+    .transcript-bubble {
+      z-index: 2;
+      width: 100%;
+      max-width: 360px;
+      min-height: 48px;
+      max-height: 85px;
+      overflow-y: auto;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 0.6rem 0.9rem;
+      font-size: 0.82rem;
+      color: #cbd5e1;
+      font-style: italic;
+      text-align: center;
+      margin-top: 0.5rem;
+    }
+
+    /* Call Controls */
+    .call-controls {
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1.75rem;
+      width: 100%;
+      max-width: 340px;
+      margin-top: 1.5rem;
+    }
+    .control-btn {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      border: none;
+      outline: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+    .control-btn:active {
+      transform: scale(0.92);
+    }
+    .control-btn.muted {
+      background: #ff4466;
+      color: #fff;
+    }
+    .end-call-btn {
+      width: 76px;
+      height: 76px;
+      background: linear-gradient(135deg, #ff2255, #cc0033);
+      color: #fff;
+      font-size: 1.85rem;
+      box-shadow: 0 0 25px rgba(255, 34, 85, 0.5);
+    }
+    .end-call-btn:hover {
+      box-shadow: 0 0 35px rgba(255, 34, 85, 0.8);
+    }
+
+    /* Start Overlay for Audio Unlock */
+    #start-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(2, 6, 12, 0.94);
+      backdrop-filter: blur(25px);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      text-align: center;
+    }
+    .start-btn {
+      margin-top: 2rem;
+      background: linear-gradient(135deg, #00f3ff, #00ff88);
+      color: #020c16;
+      border: none;
+      padding: 1.1rem 2.8rem;
+      border-radius: 35px;
+      font-size: 1.15rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 0 35px rgba(0, 255, 136, 0.5);
+      animation: pulseStart 2s infinite;
+    }
+    @keyframes pulseStart {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 25px rgba(0, 255, 136, 0.4); }
+      50% { transform: scale(1.05); box-shadow: 0 0 45px rgba(0, 255, 136, 0.8); }
+    }
+  </style>
+</head>
+<body>
+  <!-- Start / Audio Permissions Overlay -->
+  <div id="start-overlay">
+    <div class="caller-avatar">
+      <div class="avatar-inner">🦁</div>
+    </div>
+    <h2 style="margin-top: 1.5rem; font-size: 1.6rem; font-weight: 700;">LEO AI Canlı Satış Temsilcisi</h2>
+    <p style="color: #94a3b8; font-size: 0.95rem; margin-top: 0.75rem; max-width: 300px; line-height: 1.5;">
+      leohoca adına sizinle özel teklifinizi sesli görüşmek için hatta bekliyor.
+    </p>
+    <button class="start-btn" id="btn-start-call">📞 ARAMAYI YANITLA</button>
+  </div>
+
+  <div class="ambient-glow"></div>
+
+  <!-- Caller Header -->
+  <div class="caller-header">
+    <div class="verified-badge">◈ L.E.O RESMİ AI SATIŞ HATTI</div>
+    <div class="caller-avatar-wrap">
+      <div class="call-pulse-ring"></div>
+      <div class="caller-avatar">
+        <div class="avatar-inner" id="call-avatar">🦁</div>
+      </div>
+    </div>
+    <h1 class="caller-name" id="call-name">Müşteri Görüşmesi</h1>
+    <div class="call-status connecting" id="call-status-badge">
+      <span class="status-dot"></span>
+      <span id="call-timer">Bağlanıyor...</span>
+    </div>
+  </div>
+
+  <!-- Live Audio Waveform -->
+  <div class="wave-container" id="wave-container">
+    <!-- Generated dynamically via JS -->
+  </div>
+
+  <!-- Offer Details Card -->
+  <div class="offer-card">
+    <div class="offer-top">
+      <span class="offer-badge" id="offer-discount">%25 İNDİRİM</span>
+      <span style="font-size: 0.75rem; color: #00f3ff; font-weight: 600;">leohoca ONAYLI</span>
+    </div>
+    <div class="offer-product" id="offer-product">LEO AI Akıllı Otomasyon Paketi</div>
+    <div class="offer-features" id="offer-features">7/24 Kesintisiz Takip • Meta Hesap Koruma • Canlı AI Temsilci</div>
+  </div>
+
+  <!-- Realtime Transcript -->
+  <div class="transcript-bubble" id="transcript-bubble">
+    LEO dinliyor ve konuşmaya hazır...
+  </div>
+
+  <!-- Controls -->
+  <div class="call-controls">
+    <button class="control-btn" id="btn-mute" title="Mikrofonu Kapat">🎙️</button>
+    <button class="control-btn end-call-btn" id="btn-end" title="Görüşmeyi Sonlandır">📞</button>
+    <button class="control-btn" id="btn-speaker" title="Hoparlör">🔊</button>
+  </div>
+
+  <script>
+    // Tarayıcının ikinci robotik sesini kökten devre dışı bırak
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      try {
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak = function() { return false; };
+      } catch(e) {}
+    }
+
+    const MASTER_KEY = atob("QVEuQWI4Uk42TDdiRmh3S2Q0SGVsbElrQ2dhbEd5QXpoT2hoNUxFTU5JblRpdGExVmxlZUE=");
+    const params = new URLSearchParams(location.search);
+    const roomId = params.get("room") || "demo-room";
+
+    let ws = null;
+    let audioCtx = null;
+    let playCtx = null;
+    let micStream = null;
+    let workletNode = null;
+    let callTimerInterval = null;
+    let callSeconds = 0;
+    let isMuted = false;
+    let playingSources = [];
+    let nextPlayTime = 0;
+
+    // Create waveform bars
+    const waveWrap = document.getElementById("wave-container");
+    for (let i = 0; i < 28; i++) {
+      const b = document.createElement("div");
+      b.className = "wave-bar";
+      waveWrap.appendChild(b);
+    }
+    const waveBars = document.querySelectorAll(".wave-bar");
+
+    function animateWave(level) {
+      waveBars.forEach((bar, idx) => {
+        const height = Math.max(6, Math.sin(idx * 0.3 + Date.now() * 0.005) * 45 * level + 12 * Math.random());
+        bar.style.height = `${height}px`;
+      });
+    }
+
+    // Load Campaign Data from Server
+    async function loadCampaignInfo() {
+      try {
+        const res = await fetch(`/api/whatsapp/campaign/${roomId}`);
+        if (res.ok) {
+          const camp = await res.json();
+          if (camp && camp.recipient_name) {
+            document.getElementById("call-name").textContent = camp.recipient_name;
+            document.getElementById("offer-discount").textContent = camp.discount || "%20 İNDİRİM";
+            document.getElementById("offer-product").textContent = camp.product_name || "Özel Teklif";
+            document.getElementById("offer-features").textContent = camp.features || "";
+          }
+        }
+      } catch(e) {}
+    }
+
+    function ensurePlayCtx() {
+      if (!playCtx) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        playCtx = new AudioCtx({ sampleRate: 24000 });
+      }
+      return playCtx;
+    }
+
+    function playAudioChunk(buf) {
+      const ctx = ensurePlayCtx();
+      if (!ctx) return;
+      if (ctx.state === "suspended") ctx.resume().catch(() => {});
+
+      const i16 = new Int16Array(buf);
+      if (i16.length === 0) return;
+      const f32 = new Float32Array(i16.length);
+      let peak = 0;
+      for (let i = 0; i < i16.length; i++) {
+        f32[i] = i16[i] / 32768;
+        const a = Math.abs(f32[i]);
+        if (a > peak) peak = a;
+      }
+      animateWave(Math.min(1.0, peak * 2.5));
+
+      const audioBuf = ctx.createBuffer(1, f32.length, 24000);
+      audioBuf.copyToChannel(f32, 0);
+      const src = ctx.createBufferSource();
+      src.buffer = audioBuf;
+      src.connect(ctx.destination);
+
+      const now = ctx.currentTime;
+      if (nextPlayTime < now || (nextPlayTime - now) > 3.0) {
+        nextPlayTime = now + 0.02;
+      }
+      src.start(nextPlayTime);
+      nextPlayTime += audioBuf.duration;
+
+      playingSources.push(src);
+      src.onended = () => {
+        const idx = playingSources.indexOf(src);
+        if (idx >= 0) playingSources.splice(idx, 1);
+        if (playingSources.length === 0) animateWave(0.1);
+      };
+    }
+
+    // Connect to WebSocket
+    function connectWs() {
+      const proto = location.protocol === "https:" ? "wss:" : "ws:";
+      const host = location.host;
+      const url = `${proto}//${host}/ws/client?room=${encodeURIComponent(roomId)}&gemini_api_key=${encodeURIComponent(MASTER_KEY)}`;
+
+      ws = new WebSocket(url);
+      ws.binaryType = "arraybuffer";
+
+      ws.onopen = () => {
+        document.getElementById("call-status-badge").classList.remove("connecting");
+        document.getElementById("transcript-bubble").textContent = "Bağlantı kuruldu. LEO konuşmaya başlıyor...";
+        startTimer();
+        startMic();
+      };
+
+      ws.onmessage = (ev) => {
+        if (ev.data instanceof ArrayBuffer) {
+          playAudioChunk(ev.data);
+          return;
+        }
+        try {
+          const obj = JSON.parse(ev.data);
+          if (obj.type === "log" && obj.who === "jarvis" && obj.text) {
+            document.getElementById("transcript-bubble").textContent = obj.text;
+          } else if (obj.type === "ready" && obj.voice_ready) {
+            document.getElementById("transcript-bubble").textContent = "LEO devrede — sizi dinliyor ve konuşuyor.";
+          }
+        } catch(e) {}
+      };
+
+      ws.onclose = () => {
+        stopTimer();
+        document.getElementById("call-timer").textContent = "Görüşme Sona Erdi";
+        document.getElementById("transcript-bubble").textContent = "Görüşme sonlandı. Teşekkür ederiz!";
+      };
+    }
+
+    // Capture & Stream Microphone
+    async function startMic() {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioCtx({ sampleRate: 16000 });
+        if (audioCtx.state === "suspended") await audioCtx.resume();
+
+        micStream = await navigator.mediaDevices.getUserMedia({
+          audio: { channelCount: 1, sampleRate: 16000, echoCancellation: true, noiseSuppression: true }
+        });
+
+        const micSource = audioCtx.createMediaStreamSource(micStream);
+        const scriptNode = audioCtx.createScriptProcessor(2048, 1, 1);
+
+        scriptNode.onaudioprocess = (e) => {
+          if (isMuted || !ws || ws.readyState !== WebSocket.OPEN) return;
+          const input = e.inputBuffer.getChannelData(0);
+          const pcm16 = new Int16Array(input.length);
+          for (let i = 0; i < input.length; i++) {
+            let s = Math.max(-1, Math.min(1, input[i]));
+            pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+          }
+          ws.send(pcm16.buffer);
+        };
+
+        micSource.connect(scriptNode);
+        scriptNode.connect(audioCtx.destination);
+      } catch (err) {
+        console.error("Mic error:", err);
+      }
+    }
+
+    function startTimer() {
+      if (callTimerInterval) return;
+      callSeconds = 0;
+      callTimerInterval = setInterval(() => {
+        callSeconds++;
+        const mins = String(Math.floor(callSeconds / 60)).padStart(2, "0");
+        const secs = String(callSeconds % 60).padStart(2, "0");
+        document.getElementById("call-timer").textContent = `${mins}:${secs}`;
+      }, 1000);
+    }
+
+    function stopTimer() {
+      if (callTimerInterval) {
+        clearInterval(callTimerInterval);
+        callTimerInterval = null;
+      }
+    }
+
+    // Call Controls Events
+    document.getElementById("btn-start-call").addEventListener("click", () => {
+      ensurePlayCtx();
+      document.getElementById("start-overlay").style.display = "none";
+      loadCampaignInfo();
+      connectWs();
+    });
+
+    document.getElementById("btn-mute").addEventListener("click", () => {
+      isMuted = !isMuted;
+      const btn = document.getElementById("btn-mute");
+      if (isMuted) {
+        btn.classList.add("muted");
+        btn.textContent = "🔇";
+      } else {
+        btn.classList.remove("muted");
+        btn.textContent = "🎙️";
+      }
+    });
+
+    document.getElementById("btn-end").addEventListener("click", () => {
+      if (ws) ws.close();
+      if (micStream) micStream.getTracks().forEach(t => t.stop());
+      stopTimer();
+      document.getElementById("call-timer").textContent = "Görüşme Kapatıldı";
+      document.getElementById("transcript-bubble").textContent = "Görüşme tamamlandı. Teklifi kabul etmek için leohoca ile WhatsApp üzerinden onaylaşabilirsiniz.";
+    });
+  </script>
+</body>
+</html>

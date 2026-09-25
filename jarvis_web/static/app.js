@@ -711,7 +711,8 @@ async function executeHubTool(toolName) {
     cron_scheduler: "⏰ Rutinat Automatike",
     survival_guide: "🚨 Urgjenca & Ndihma e Parë 112",
     companion_mode: "🌟 Modi Bashkëbisedues",
-    meta_appeal: "🛡️ Meta Otomatik Hesap Kurtarma & İtiraz Motoru"
+    meta_appeal: "🛡️ Meta Otomatik Hesap Kurtarma & İtiraz Motoru",
+    whatsapp_sales: "📞 WhatsApp AI Satış & Arama Ajanı"
   };
 
   modalTitle.textContent = toolTitles[toolName] || toolName;
@@ -802,6 +803,60 @@ window.sendMetaAppealFromModal = async function() {
     }
   } catch (err) {
     if (resBox) resBox.innerHTML = `<div style="color:#ff3344; font-size:12px;">Lidhja dështoi: ${err.message}</div>`;
+  }
+};
+
+window.createSalesOfferFromModal = async function() {
+  const recipient = document.getElementById("sales-recipient")?.value.trim() || "Müşteri";
+  const phone = document.getElementById("sales-phone")?.value.trim() || "";
+  const product = document.getElementById("sales-product")?.value.trim() || "LEO AI Akıllı Otomasyon Paketi";
+  const discount = document.getElementById("sales-discount")?.value.trim() || "%20 İndirim";
+  const features = document.getElementById("sales-features")?.value.trim() || "";
+  const resBox = document.getElementById("sales-result-box");
+
+  if (resBox) {
+    resBox.style.display = "block";
+    resBox.innerHTML = `<div style="color:var(--cyan); font-size:12px;">WhatsApp teklifi ve sesli arama odası hazırlanıyor...</div>`;
+  }
+
+  try {
+    const res = await fetch("/api/whatsapp/campaign", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        recipient_name: recipient,
+        phone_number: phone,
+        product_name: product,
+        discount: discount,
+        features: features
+      })
+    });
+    const data = await res.json();
+    if (data.campaign) {
+      const c = data.campaign;
+      if (resBox) {
+        resBox.innerHTML = `
+          <div style="background:rgba(37,211,102,0.12); border:1px solid #25d366; border-radius:8px; padding:12px; color:#fff; font-size:12px;">
+            <div style="font-weight:800; color:#25d366; margin-bottom:6px;">✅ TEKLİF & ARAMA ODASI HAZIR!</div>
+            <div>• Müşteri: <b>${c.recipient_name}</b></div>
+            <div>• İndirim: <b style="color:#00f3ff;">${c.discount}</b></div>
+            <div style="margin-top:10px; display:flex; flex-direction:column; gap:6px;">
+              <a href="${c.whatsapp_direct_url}" target="_blank" style="background:#25d366; color:#000; text-decoration:none; font-weight:800; padding:8px 12px; border-radius:6px; text-align:center;">
+                💬 WhatsApp'ta Aç ve Gönder
+              </a>
+              <a href="${c.call_url}" target="_blank" style="background:#00f3ff; color:#000; text-decoration:none; font-weight:800; padding:8px 12px; border-radius:6px; text-align:center;">
+                📞 Canlı Sesli Arama Odasını Aç (Test Et)
+              </a>
+            </div>
+          </div>
+        `;
+      }
+      setTimeout(() => executeHubTool("whatsapp_sales"), 2500);
+    } else {
+      if (resBox) resBox.innerHTML = `<div style="color:#ff3344; font-size:12px;">Hata: ${data.message || 'Oluşturulamadı'}</div>`;
+    }
+  } catch(err) {
+    if (resBox) resBox.innerHTML = `<div style="color:#ff3344; font-size:12px;">Hata: ${err.message}</div>`;
   }
 };
 
