@@ -121,7 +121,8 @@ SERVER_TOOLS = {
     "get_weather", "save_memory", "delete_memory", "survival_guide", "companion_mode", "find_location",
     "sys_info", "get_phone_telemetry", "get_device_telemetry", "control_mobile_app", "voice_command_listener",
     "instagram_stalker_agent", "instagram_live_stalker", "social_media_manager", "business_meta_auto_publisher_and_ads",
-    "smart_home_iot_hub", "survival_companion_mode", "apply_command_center_ui", "create_whatsapp_sales_campaign"
+    "smart_home_iot_hub", "survival_companion_mode", "apply_command_center_ui", "create_whatsapp_sales_campaign",
+    "whatsapp_bot_chat"
 }
 # Tarayıcıya yönlendirilen araçlar
 CLIENT_TOOLS = {"toggle_webcam", "apply_command_center_ui"}
@@ -520,6 +521,20 @@ async def run_server_tool(name: str, args: dict) -> str:
             except Exception as e:
                 return f"WhatsApp satış kampanyası oluşturulurken hata: {e}"
 
+        if name == "whatsapp_bot_chat":
+            try:
+                from actions.whatsapp_sales_agent import generate_whatsapp_bot_reply
+                room_id = args.get("room_id", "")
+                message = args.get("message", "")
+                sender_name = args.get("sender_name", "Müşteri")
+                res = generate_whatsapp_bot_reply(room_id, message, sender_name)
+                return (
+                    f"🤖 LEO WhatsApp Yanıtı:\n{res.get('reply')}\n\n"
+                    f"💬 WhatsApp'tan Gönder: {res.get('whatsapp_reply_url')}"
+                )
+            except Exception as e:
+                return f"WhatsApp bot sohbet hatası: {e}"
+
         if name == "find_location":
             t = get_current_telemetry()
             if t and t.get("location_str"):
@@ -774,17 +789,28 @@ class LiveBridge:
                         async with asyncio.TaskGroup() as tg:
                             tg.create_task(self._from_browser())
                             tg.create_task(self._from_gemini())
-                except WebSocketDisconnect:
+                except (WebSocketDisconnect, RuntimeError):
                     raise
+                except BaseExceptionGroup as eg:
+                    sub_types = [type(e) for e in eg.exceptions]
+                    if any(issubclass(t, (WebSocketDisconnect, RuntimeError)) for t in sub_types):
+                        raise WebSocketDisconnect()
+                    msg = str(eg)
+                    print(f"[Sunucu] Live connect uyarısı: {msg}")
                 except Exception as e:
                     msg = str(e)
                     print(f"[Sunucu] Live connect uyarısı: {msg}")
                     if "authentication" in msg.lower() or "1008" in msg or "401" in msg or "credential" in msg.lower():
                         save_app_config({"gemini_api_key": MASTER_GEMINI_KEY})
                         os.environ["GEMINI_API_KEY"] = MASTER_GEMINI_KEY
-                    # Gemini Live bağlantısı hata verse dahi WebSocket KESİNLİKLE koparılmaz
-                    await self.send_json({"type": "ready", "voice_ready": False})
-                    await self._fallback_loop()
+                    # Eğer tarayıcı bağlantısı kapandıysa fallback döngüsüne girme
+                    try:
+                        if hasattr(self.ws, "client_state") and self.ws.client_state.name != "CONNECTED":
+                            return
+                        await self.send_json({"type": "ready", "voice_ready": False})
+                        await self._fallback_loop()
+                    except Exception:
+                        return
         finally:
             if self._heartbeat_task and not self._heartbeat_task.done():
                 self._heartbeat_task.cancel()
@@ -1084,6 +1110,79 @@ async def create_whatsapp_campaign_api(payload: dict):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+@app.post("/api/whatsapp/chat")
+async def whatsapp_chat_reply_api(payload: dict):
+    try:
+        from actions.whatsapp_sales_agent import generate_whatsapp_bot_reply
+        room_id = str(payload.get("room_id", "")).strip()
+        message = str(payload.get("message", "")).strip()
+        sender_name = str(payload.get("sender_name", "Müşteri")).strip()
+        if not message:
+            return {"ok": False, "error": "Mesaj boş olamaz."}
+        res = await asyncio.to_thread(generate_whatsapp_bot_reply, room_id, message, sender_name)
+        return res
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+@app.get("/api/whatsapp/campaign/{room_id}/chat")
+async def get_whatsapp_campaign_chat_api(room_id: str):
+    try:
+        from actions.whatsapp_sales_agent import get_campaign_chat_history, get_sales_campaign
+        history = get_campaign_chat_history(room_id)
+        camp = get_sales_campaign(room_id)
+        return {"ok": True, "chat_history": history, "campaign": camp}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+@app.post("/api/whatsapp/send")
+async def send_whatsapp_message_api(payload: dict):
+    try:
+        phone = str(payload.get("phone", "")).strip()
+        message = str(payload.get("message", "")).strip()
+        if not message:
+            return {"ok": False, "error": "Mesaj boş olamaz."}
+        try:
+            from actions.whatsapp import send_whatsapp_message
+            result = await asyncio.to_thread(send_whatsapp_message, message=message, phone_number=phone, send_now=True)
+            return {"ok": True, "result": result}
+        except Exception:
+            import urllib.parse
+            wa_url = f"https://wa.me/{phone}?text={urllib.parse.quote(message)}" if phone else f"https://wa.me/?text={urllib.parse.quote(message)}"
+            return {"ok": True, "whatsapp_url": wa_url}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+@app.get("/api/whatsapp/webhook")
+async def whatsapp_webhook_verify(request: Request):
+    """Meta WhatsApp Cloud API Webhook Doğrulama."""
+    params = request.query_params
+    mode = params.get("hub.mode")
+    token = params.get("hub.verify_token")
+    challenge = params.get("hub.challenge")
+    if mode == "subscribe" and token:
+        return Response(content=challenge or "OK", media_type="text/plain")
+    return Response(content="LEO WhatsApp Webhook Active", media_type="text/plain")
+
+@app.post("/api/whatsapp/webhook")
+async def whatsapp_webhook_receive(request: Request):
+    """Gelen WhatsApp mesajını otomatik yakalayıp yanıtlayan ücretsiz webhook."""
+    try:
+        data = await request.json()
+        entries = data.get("entry", [])
+        for entry in entries:
+            for change in entry.get("changes", []):
+                value = change.get("value", {})
+                messages = value.get("messages", [])
+                for msg in messages:
+                    from_num = msg.get("from")
+                    text = msg.get("text", {}).get("body", "")
+                    if text:
+                        from actions.whatsapp_sales_agent import generate_whatsapp_bot_reply
+                        generate_whatsapp_bot_reply(room_id="", incoming_message=text, sender_name=from_num)
+        return {"status": "success"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
 @app.post("/api/tool/execute")
 async def execute_tool_api(payload: dict):
     tool = str(payload.get("tool", "")).strip()
@@ -1235,48 +1334,96 @@ async def execute_tool_api(payload: dict):
             from actions.whatsapp_sales_agent import list_sales_campaigns
             camps = list_sales_campaigns()
             history_rows = ""
-            for c in camps[:6]:
+            camp_options = '<option value="">-- Yeni Müşteri Sohbeti --</option>'
+            for c in camps[:8]:
+                r_id = c.get('room_id')
+                r_name = c.get('recipient_name') or 'Müşteri'
+                camp_options += f'<option value="{r_id}">{r_name} ({c.get("discount")})</option>'
                 history_rows += f"""
                 <div style="background: rgba(0,240,255,0.04); border: 1px solid rgba(0,240,255,0.18); border-radius: 8px; padding: 10px; margin-bottom: 8px;">
                   <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <b style="color:#00f3ff; font-size:14px;">{c.get('recipient_name')}</b>
+                    <b style="color:#00f3ff; font-size:14px;">{r_name}</b>
                     <span style="background:#25d366; color:#020b12; font-weight:700; font-size:11px; padding:2px 8px; border-radius:10px;">{c.get('discount')}</span>
                   </div>
                   <div style="color:#94a3b8; font-size:12px; margin:4px 0;">{c.get('product_name')}</div>
-                  <div style="display:flex; gap:8px; margin-top:8px;">
-                    <a href="{c.get('whatsapp_direct_url')}" target="_blank" style="background:#25d366; color:#000; text-decoration:none; font-size:11px; font-weight:700; padding:5px 12px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">💬 WhatsApp Mesajı</a>
+                  <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+                    <a href="{c.get('whatsapp_direct_url')}" target="_blank" style="background:#25d366; color:#000; text-decoration:none; font-size:11px; font-weight:700; padding:5px 12px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">💬 WhatsApp Aç</a>
                     <a href="{c.get('call_url')}" target="_blank" style="background:#00f3ff; color:#000; text-decoration:none; font-size:11px; font-weight:700; padding:5px 12px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">📞 Sesli Arama Odası</a>
+                    <button onclick="selectCampaignForChat('{r_id}', '{r_name}')" style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#fff; font-size:11px; font-weight:600; padding:5px 12px; border-radius:6px; cursor:pointer;">💬 Bot Sohbeti</button>
                   </div>
                 </div>
                 """
 
             html = f"""
             <div class="tool-content-box">
-              <div style="color: #25d366; font-weight: 800; font-size: 15px; margin-bottom: 10px; display:flex; align-items:center; gap:8px;">
-                <span>📞 WHATSAPP AI SATIŞ & ARAMA AJANI (%100 ÜCRETSİZ)</span>
+              <div style="color: #25d366; font-weight: 800; font-size: 15px; margin-bottom: 8px; display:flex; align-items:center; gap:8px;">
+                <span>📞 WHATSAPP AI SATIŞ, SOHBET & ARAMA AJANI (%100 ÜCRETSİZ)</span>
               </div>
-              <div style="background: rgba(37,211,102,0.08); border: 1px solid rgba(37,211,102,0.25); border-radius: 8px; padding: 12px; margin-bottom: 15px; font-size: 12px; line-height: 1.5; color:#cbd5e1;">
-                İstediğiniz müşteriyi veya kişiyi WhatsApp üzerinden insan gibi aratabilir, teklif sunabilir ve pazarlık yaptırabilirsiniz.
-              </div>
-
-              <!-- Hızlı Teklif & Arama Formu -->
-              <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:15px; background:rgba(0,0,0,0.3); padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
-                <input id="sales-recipient" type="text" placeholder="Kişi / Müşteri Adı (Örn: Leo, Ahmet)" style="background:#030f18; border:1px solid rgba(0,240,255,0.3); color:#fff; padding:8px 12px; border-radius:6px; font-size:13px; outline:none;">
-                <input id="sales-phone" type="text" placeholder="WhatsApp Telefon Numarası (Örn: +905551234567)" style="background:#030f18; border:1px solid rgba(0,240,255,0.3); color:#fff; padding:8px 12px; border-radius:6px; font-size:13px; outline:none;">
-                <input id="sales-product" type="text" placeholder="Ürün / Hizmet (Örn: Instagram Kurtarma Paketi)" value="LEO AI Otomasyon Paketi" style="background:#030f18; border:1px solid rgba(0,240,255,0.3); color:#fff; padding:8px 12px; border-radius:6px; font-size:13px; outline:none;">
-                <input id="sales-discount" type="text" placeholder="İndirim Oranı / Fiyat (Örn: %25 İndirim, 750 TL)" value="%25 İndirim" style="background:#030f18; border:1px solid rgba(0,240,255,0.3); color:#fff; padding:8px 12px; border-radius:6px; font-size:13px; outline:none;">
-                <input id="sales-features" type="text" placeholder="Özellikler (virgülle ayırın)" value="7/24 Takip, Meta Koruma, Özel Destek" style="background:#030f18; border:1px solid rgba(0,240,255,0.3); color:#fff; padding:8px 12px; border-radius:6px; font-size:13px; outline:none;">
-                
-                <button onclick="createSalesOfferFromModal()" style="margin-top:6px; background:linear-gradient(135deg, #25d366, #00f3ff); border:none; color:#020d18; font-weight:800; padding:10px 14px; border-radius:6px; cursor:pointer; font-size:13px;">
-                  🚀 TEKLİF & SESLİ ARAMA ODASINI OLUŞTUR
-                </button>
+              <div style="background: rgba(37,211,102,0.08); border: 1px solid rgba(37,211,102,0.25); border-radius: 8px; padding: 10px; margin-bottom: 12px; font-size: 12px; line-height: 1.5; color:#cbd5e1;">
+                İstediğiniz müşteriye WhatsApp üzerinden insansı teklif sunabilir, pazarlık yapabilir ve <b>%100 ücretsiz canlı sesli arama</b> linki ile doğrudan telefonda konuşturabilirsiniz.
               </div>
 
-              <div id="sales-result-box" style="display:none; margin-bottom:15px;"></div>
+              <!-- Sekmeler -->
+              <div style="display:flex; gap:8px; margin-bottom:12px;">
+                <button id="tab-btn-create" onclick="switchSalesTab('create')" style="flex:1; background:#00f3ff; color:#020d18; border:none; padding:8px 12px; border-radius:6px; font-weight:700; font-size:12px; cursor:pointer;">⚡ Yeni Teklif & Sesli Oda</button>
+                <button id="tab-btn-chat" onclick="switchSalesTab('chat')" style="flex:1; background:rgba(255,255,255,0.08); color:#94a3b8; border:1px solid rgba(255,255,255,0.15); padding:8px 12px; border-radius:6px; font-weight:700; font-size:12px; cursor:pointer;">💬 WhatsApp Bot Canlı Sohbet</button>
+              </div>
 
-              <div style="font-weight:700; color:#94a3b8; font-size:12px; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">Son Hazırlanan Teklifler & Aramalar:</div>
-              <div id="sales-history-list">
-                {history_rows or '<div style="color:#64748b; font-size:12px; text-align:center; padding:10px;">Henüz aktif teklif yok.</div>'}
+              <!-- SEKME 1: Yeni Teklif Oluşturucu -->
+              <div id="sales-section-create">
+                <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:15px; background:rgba(0,0,0,0.3); padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
+                  <input id="sales-recipient" type="text" placeholder="Kişi / Müşteri Adı (Örn: Leo, Ahmet)" style="background:#030f18; border:1px solid rgba(0,240,255,0.3); color:#fff; padding:8px 12px; border-radius:6px; font-size:13px; outline:none;">
+                  <input id="sales-phone" type="text" placeholder="WhatsApp Telefon Numarası (Örn: +905551234567)" style="background:#030f18; border:1px solid rgba(0,240,255,0.3); color:#fff; padding:8px 12px; border-radius:6px; font-size:13px; outline:none;">
+                  <input id="sales-product" type="text" placeholder="Ürün / Hizmet (Örn: Instagram Kurtarma Paketi)" value="LEO AI Otomasyon Paketi" style="background:#030f18; border:1px solid rgba(0,240,255,0.3); color:#fff; padding:8px 12px; border-radius:6px; font-size:13px; outline:none;">
+                  <input id="sales-discount" type="text" placeholder="İndirim Oranı / Fiyat (Örn: %25 İndirim, 750 TL)" value="%25 İndirim" style="background:#030f18; border:1px solid rgba(0,240,255,0.3); color:#fff; padding:8px 12px; border-radius:6px; font-size:13px; outline:none;">
+                  <input id="sales-features" type="text" placeholder="Özellikler (virgülle ayırın)" value="7/24 Takip, Meta Koruma, Özel Destek" style="background:#030f18; border:1px solid rgba(0,240,255,0.3); color:#fff; padding:8px 12px; border-radius:6px; font-size:13px; outline:none;">
+                  
+                  <button onclick="createSalesOfferFromModal()" style="margin-top:6px; background:linear-gradient(135deg, #25d366, #00f3ff); border:none; color:#020d18; font-weight:800; padding:10px 14px; border-radius:6px; cursor:pointer; font-size:13px;">
+                    🚀 TEKLİF & SESLİ ARAMA ODASINI OLUŞTUR
+                  </button>
+                </div>
+
+                <div id="sales-result-box" style="display:none; margin-bottom:15px;"></div>
+
+                <div style="font-weight:700; color:#94a3b8; font-size:12px; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">Son Hazırlanan Teklifler & Aramalar:</div>
+                <div id="sales-history-list">
+                  {history_rows or '<div style="color:#64748b; font-size:12px; text-align:center; padding:10px;">Henüz aktif teklif yok.</div>'}
+                </div>
+              </div>
+
+              <!-- SEKME 2: Canlı WhatsApp Bot Sohbeti & Pazarlık Masası -->
+              <div id="sales-section-chat" style="display:none;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                  <select id="chat-campaign-select" onchange="onChatCampaignChange()" style="flex:1; background:#030f18; border:1px solid rgba(0,240,255,0.3); color:#00f3ff; font-weight:600; padding:8px 10px; border-radius:6px; font-size:12px; outline:none;">
+                    {camp_options}
+                  </select>
+                </div>
+
+                <!-- Chat Mesaj Alanı -->
+                <div id="whatsapp-chat-box" style="height:220px; overflow-y:auto; background:rgba(3,12,20,0.85); border:1px solid rgba(0,240,255,0.2); border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:8px; margin-bottom:10px;">
+                  <div style="text-align:center; color:#64748b; font-size:11px; margin:auto 0;">
+                    🤖 Müşteri sorusunu yazın veya aşağıdaki hazır itiraz butonlarına tıklayarak LEO'nun insansı yanıtını test edin.
+                  </div>
+                </div>
+
+                <!-- Hızlı Simülasyon Butonları -->
+                <div style="display:flex; gap:6px; overflow-x:auto; padding-bottom:6px; margin-bottom:8px;">
+                  <button onclick="quickSimulateChat('Fiyat çok yüksek geldi, indirim var mı?')" style="white-space:nowrap; background:rgba(255,0,85,0.15); border:1px solid rgba(255,0,85,0.3); color:#ff5588; font-size:11px; font-weight:600; padding:4px 8px; border-radius:12px; cursor:pointer;">💸 Fiyat Çok Yüksek</button>
+                  <button onclick="quickSimulateChat('Pakette tam olarak hangi özellikler var?')" style="white-space:nowrap; background:rgba(0,240,255,0.15); border:1px solid rgba(0,240,255,0.3); color:#00f3ff; font-size:11px; font-weight:600; padding:4px 8px; border-radius:12px; cursor:pointer;">📦 Özellikleri Sor</button>
+                  <button onclick="quickSimulateChat('Sizinle canlı telefonda sesli konuşabilir miyiz?')" style="white-space:nowrap; background:rgba(37,211,102,0.15); border:1px solid rgba(37,211,102,0.3); color:#25d366; font-size:11px; font-weight:600; padding:4px 8px; border-radius:12px; cursor:pointer;">📞 Sesli Konuşalım</button>
+                  <button onclick="quickSimulateChat('Tamam anlaştık, nasıl ödeyebilirim?')" style="white-space:nowrap; background:rgba(255,200,0,0.15); border:1px solid rgba(255,200,0,0.3); color:#ffc800; font-size:11px; font-weight:600; padding:4px 8px; border-radius:12px; cursor:pointer;">🤝 Anlaştık</button>
+                </div>
+
+                <!-- Mesaj Gönderme Girişi -->
+                <div style="display:flex; gap:6px;">
+                  <input id="chat-input-msg" type="text" placeholder="Müşteriden gelen mesajı yazın..." onkeydown="if(event.key==='Enter') sendWhatsAppBotMsg()" style="flex:1; background:#030f18; border:1px solid rgba(0,240,255,0.3); color:#fff; padding:8px 12px; border-radius:6px; font-size:13px; outline:none;">
+                  <button onclick="sendWhatsAppBotMsg()" style="background:#25d366; color:#020d18; font-weight:800; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px;">GÖNDER</button>
+                </div>
+
+                <div id="chat-actions-bar" style="display:none; margin-top:10px; display:flex; gap:8px;">
+                  <a id="btn-open-wa-reply" href="#" target="_blank" style="flex:1; text-align:center; background:#25d366; color:#000; text-decoration:none; font-weight:700; font-size:12px; padding:7px 10px; border-radius:6px; display:inline-block;">💬 WhatsApp'ta Yanıtla</a>
+                  <a id="btn-open-call-room" href="#" target="_blank" style="flex:1; text-align:center; background:#00f3ff; color:#000; text-decoration:none; font-weight:700; font-size:12px; padding:7px 10px; border-radius:6px; display:inline-block;">📞 Sesli Arama Odası</a>
+                </div>
               </div>
             </div>
             """

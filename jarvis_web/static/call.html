@@ -297,6 +297,87 @@
       0%, 100% { transform: scale(1); box-shadow: 0 0 25px rgba(0, 255, 136, 0.4); }
       50% { transform: scale(1.05); box-shadow: 0 0 45px rgba(0, 255, 136, 0.8); }
     }
+
+    /* Slide-up WhatsApp Chat Drawer */
+    .chat-drawer {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 65vh;
+      max-height: 480px;
+      background: rgba(3, 12, 22, 0.96);
+      backdrop-filter: blur(25px);
+      border-top: 1px solid rgba(37, 211, 102, 0.4);
+      border-radius: 24px 24px 0 0;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.85);
+      padding: 1rem 1.2rem 1.5rem;
+    }
+    .chat-drawer.open {
+      transform: translateY(0);
+    }
+    .drawer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 0.6rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      margin-bottom: 0.6rem;
+    }
+    .drawer-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #25d366;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .drawer-close {
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: #fff;
+      font-size: 1.1rem;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    .drawer-messages {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 6px 0;
+    }
+    .drawer-input-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .drawer-input {
+      flex: 1;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(0, 240, 255, 0.3);
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      outline: none;
+    }
+    .drawer-send-btn {
+      background: #25d366;
+      border: none;
+      color: #020c16;
+      font-weight: 700;
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
   </style>
 </head>
 <body>
@@ -354,7 +435,30 @@
   <div class="call-controls">
     <button class="control-btn" id="btn-mute" title="Mikrofonu Kapat">🎙️</button>
     <button class="control-btn end-call-btn" id="btn-end" title="Görüşmeyi Sonlandır">📞</button>
+    <button class="control-btn" id="btn-chat" title="WhatsApp & Yazılı Sohbet">💬</button>
     <button class="control-btn" id="btn-speaker" title="Hoparlör">🔊</button>
+  </div>
+
+  <!-- Slide-up Chat Drawer -->
+  <div class="chat-drawer" id="chat-drawer">
+    <div class="drawer-header">
+      <div class="drawer-title">💬 WhatsApp & Canlı Sohbet</div>
+      <button class="drawer-close" id="btn-close-drawer">✕</button>
+    </div>
+    <div class="drawer-messages" id="drawer-messages">
+      <div style="text-align:center; color:#64748b; font-size:0.75rem; margin:auto 0;">
+        Sorunuzu yazarak LEO ile anında mesajlaşabilirsiniz.
+      </div>
+    </div>
+    <div class="drawer-input-row">
+      <input type="text" class="drawer-input" id="drawer-input" placeholder="Bir mesaj yazın..." onkeydown="if(event.key==='Enter') sendDrawerMsg()">
+      <button class="drawer-send-btn" onclick="sendDrawerMsg()">Gönder</button>
+    </div>
+    <div style="margin-top:6px; display:flex; justify-content:space-between; align-items:center;">
+      <a id="drawer-wa-link" href="#" target="_blank" style="color:#25d366; font-size:0.75rem; text-decoration:none; font-weight:600;">
+        💬 WhatsApp'ta Devam Et ➔
+      </a>
+    </div>
   </div>
 
   <script>
@@ -573,6 +677,90 @@
       document.getElementById("call-timer").textContent = "Görüşme Kapatıldı";
       document.getElementById("transcript-bubble").textContent = "Görüşme tamamlandı. Teklifi kabul etmek için leohoca ile WhatsApp üzerinden onaylaşabilirsiniz.";
     });
+
+    // Chat Drawer Handlers
+    const chatDrawer = document.getElementById("chat-drawer");
+    document.getElementById("btn-chat").addEventListener("click", () => {
+      chatDrawer.classList.toggle("open");
+      if (chatDrawer.classList.contains("open")) {
+        loadDrawerHistory();
+      }
+    });
+    document.getElementById("btn-close-drawer").addEventListener("click", () => {
+      chatDrawer.classList.remove("open");
+    });
+
+    async function loadDrawerHistory() {
+      try {
+        const res = await fetch(`/api/whatsapp/campaign/${roomId}/chat`);
+        const data = await res.json();
+        const dBox = document.getElementById("drawer-messages");
+        if (data.ok && Array.isArray(data.chat_history) && data.chat_history.length > 0) {
+          dBox.innerHTML = data.chat_history.map(m => {
+            const isMe = m.sender === "customer";
+            const bg = isMe ? "rgba(255,255,255,0.08)" : "rgba(37,211,102,0.18)";
+            const align = isMe ? "flex-end" : "flex-start";
+            const color = isMe ? "#00f3ff" : "#25d366";
+            const label = isMe ? "Siz" : "LEO Bot";
+            return `
+              <div style="align-self:${align}; max-width:85%; background:${bg}; border-radius:12px; padding:7px 11px; font-size:0.82rem;">
+                <div style="font-weight:700; font-size:0.68rem; color:${color}; margin-bottom:2px;">${label} • ${m.time || ''}</div>
+                <div style="color:#fff; word-break:break-word;">${m.text}</div>
+              </div>
+            `;
+          }).join("");
+          dBox.scrollTop = dBox.scrollHeight;
+        }
+        if (data.campaign) {
+          const waLink = document.getElementById("drawer-wa-link");
+          if (waLink && data.campaign.whatsapp_direct_url) {
+            waLink.href = data.campaign.whatsapp_direct_url;
+          }
+        }
+      } catch(e) {}
+    }
+
+    window.sendDrawerMsg = async function() {
+      const inp = document.getElementById("drawer-input");
+      const val = inp?.value.trim();
+      if (!val) return;
+      inp.value = "";
+
+      const dBox = document.getElementById("drawer-messages");
+      dBox.innerHTML += `
+        <div style="align-self:flex-end; max-width:85%; background:rgba(255,255,255,0.08); border-radius:12px; padding:7px 11px; font-size:0.82rem;">
+          <div style="font-weight:700; font-size:0.68rem; color:#00f3ff; margin-bottom:2px;">Siz</div>
+          <div style="color:#fff;">${val}</div>
+        </div>
+        <div id="drawer-thinking" style="align-self:flex-start; color:#25d366; font-size:0.75rem; font-style:italic;">LEO yazıyor...</div>
+      `;
+      dBox.scrollTop = dBox.scrollHeight;
+
+      try {
+        const res = await fetch("/api/whatsapp/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            room_id: roomId,
+            message: val,
+            sender_name: "Müşteri"
+          })
+        });
+        const data = await res.json();
+        document.getElementById("drawer-thinking")?.remove();
+        if (data.ok) {
+          dBox.innerHTML += `
+            <div style="align-self:flex-start; max-width:85%; background:rgba(37,211,102,0.18); border-radius:12px; padding:7px 11px; font-size:0.82rem;">
+              <div style="font-weight:700; font-size:0.68rem; color:#25d366; margin-bottom:2px;">LEO Bot</div>
+              <div style="color:#fff; word-break:break-word;">${data.reply}</div>
+            </div>
+          `;
+          dBox.scrollTop = dBox.scrollHeight;
+        }
+      } catch(e) {
+        document.getElementById("drawer-thinking")?.remove();
+      }
+    };
   </script>
 </body>
 </html>

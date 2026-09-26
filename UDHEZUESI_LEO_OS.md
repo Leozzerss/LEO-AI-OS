@@ -39,14 +39,31 @@ Nëse llogaria jote mbyllet, pezullohet ose kufizohet nga Meta, sistemi ka mekan
 
 ---
 
-### 3. 📊 Radari i Ndjekësve dhe Monitorimi Social (Stalker Radar)
+### 3. 📞 WhatsApp AI: Agjenti i Shitjeve, Bisedave dhe Thirrjeve Live me Zë (%100 FALAS)
+Sistemi yt tani mund të flasë, të negociojë dhe të kryejë shitje me çdo klient përmes WhatsApp-it:
+
+* **Përgatitje Ofertash të Personalizuara:**
+  - Mund t'i thuash me zë ose ta shkruash: *"Leo-s bëji një ofertë në WhatsApp me 25% zbritje për Paketën e Sigurisë"*.
+  - LEO krijon një tekst bindës, njerëzor dhe miqësor, gati për t'u dërguar me 1 klikim në WhatsApp.
+* **Bot Bisedash Inteligjente në WhatsApp:**
+  - Klienti mund të bëjë pyetje si *"Pse është kaq shtrenjtë?"*, *"A ka zbritje?"* ose *"Çfarë përfshin paketa?"*.
+  - LEO i përgjigjet si njeri i vërtetë me tone të ngrohta, jep argumente bindëse dhe ofron zgjidhje të menjëhershme.
+* **Oda e Thirrjes Live me Zë (`/call?room=...`):**
+  - Çdo mesazh WhatsApp shoqërohet me një link unik të dhomës së thirrjes.
+  - Klienti thjesht klikon linkun dhe lidhet **drejtpërdrejt me zë** me LEO AI nga shfletuesi i telefonit, pa shkarkuar asnjë aplikacion dhe pa asnjë kosto (0 lekë / 0 euro / pa fatura VoIP).
+* **Mundësi Bisede me Tekst brenda Thirrjes:**
+  - Nëse klienti ndodhet në ambient të zhurmshëm, mund të hapë sirtarin e bisedës në ekranin e thirrjes dhe të shkruajë direkt me LEO-n.
+
+---
+
+### 4. 📊 Radari i Ndjekësve dhe Monitorimi Social (Stalker Radar)
 * **Monitorimi i `@leohoca`:** Ndjekja e numrit të ndjekësve, personave që ndjek dhe postimeve në mënyrë të rregullt.
 * **Detektimi i Ndryshimeve:** Kur dikush të bën unfollow ose të ndjek, sistemi e regjistron menjëherë në memorien e brendshme.
 * **Sinjalizime me Zë Kibernetik:** Njoftime audio kur zbulohen ndryshime në profil.
 
 ---
 
-### 4. 📱 Telemetria Live e Telefonit dhe GPS me Saktësi të Lartë
+### 5. 📱 Telemetria Live e Telefonit dhe GPS me Saktësi të Lartë
 * **GPS i Saktë (High Accuracy):** Lexon koordinatat e sakta gjeografike me marzh gabimi në metra (± m).
 * **Adresa Reale (Reverse Geocoding):** Tregon në ekran emrin e vërtetë të qytetit, rrugës dhe shtetit ku ndodhesh (jo vendndodhje false).
 * **Statusi i Pajisjes:**
@@ -56,7 +73,7 @@ Nëse llogaria jote mbyllet, pezullohet ose kufizohet nga Meta, sistemi ka mekan
 
 ---
 
-### 5. 🎛️ Paneli HUD dhe Mjetet e Shpejta (Hub Tools)
+### 6. 🎛️ Paneli HUD dhe Mjetet e Shpejta (Hub Tools)
 * **Kamera Inteligjente (Vision AI):** Mund të hapësh kamerën e telefonit dhe L.E.O analizon ambientin rreth teje.
 * **Urgjenca 112:** Buton i shpejtë për ndihmë të parë dhe protokolle sigurie mjekësore/emergjence.
 * **Moti në Kohë Reale:** Temperatura dhe kushtet atmosferike të vendndodhjes tënde aktuale.
@@ -64,7 +81,7 @@ Nëse llogaria jote mbyllet, pezullohet ose kufizohet nga Meta, sistemi ka mekan
 
 ---
 
-### 6. 🔒 Siguria Biometrike (Face ID & PIN)
+### 7. 🔒 Siguria Biometrike (Face ID & PIN)
 * **Ekrani i Sigurisë:** Hapja e sistemit me simulim Face ID ose me kod PIN personal (`1234`).
 * **Privatësi e Plotë:** Të dhënat e tua ruhen në serverin tënd privat dhe në telefon, të mbrojtura nga shikimet e padëshiruara.
 
@@ -89,6 +106,7 @@ Nëse llogaria jote mbyllet, pezullohet ose kufizohet nga Meta, sistemi ka mekan
 | :--- | :--- | :--- |
 | **Zëri** | ✅ AKTIV | Gemini 2.5 Flash Native Audio (`Charon`) |
 | **Çelësi API** | ✅ I INTEGRUAR | Master Key aktiv pa ndërprerje (`AQ...leeA`) |
+| **WhatsApp AI Calling** | ✅ 100% FALAS | Biseda, negociata dhe thirrje live me zë pa VoIP |
 | **5 Kanalet Meta** | ✅ AKTIV | Instagram & Facebook me CC `info@leohoca.com` |
 | **GPS & Telemetri** | ✅ LIVE | Gjeolokacion real dhe statusi i baterisë |
 | **Serveri Cloud** | ✅ ONLINE | Render Backend 24/7 i sinkronizuar me GitHub |

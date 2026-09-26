@@ -49,5 +49,179 @@
     "status": "OFFER_READY",
     "call_duration_seconds": 0,
     "logs": []
+  },
+  "leo-95907fa3": {
+    "room_id": "leo-95907fa3",
+    "recipient_name": "Müşteri",
+    "phone_number": "",
+    "product_name": "LEO AI Otomasyon Paketi",
+    "discount": "%25 İndirim",
+    "features": "7/24 Takip, Meta Koruma, Özel Destek",
+    "custom_notes": "",
+    "call_url": "https://leo-ai-backend.onrender.com/call?room=leo-95907fa3",
+    "message_text": "Selam Müşteri! Umarım günün harika geçiyordur.\n\nleohoca ile senin durumunu ve konuştuklarımızı değerlendirdik; senin için özel olarak 'LEO AI Otomasyon Paketi' üzerinde bir kolaylık sağladık.\n\n🎁 Sana Özel Teklifimiz: %25 İndirim\n✨ Pakette Neler Var:\n • 7/24 Takip\n • Meta Koruma\n • Özel Destek\n\nDetayları doğrudan konuşmak, aklına takılanları sormak veya anında canlı sesli görüşmek istersen hiçbir şey yüklemeden şu güvenli arama odasından hemen bağlanabilirsin:\n📞 Canlı Sesli Görüşme Linki: https://leo-ai-backend.onrender.com/call?room=leo-95907fa3\n\nFikrin nedir, ne dersin?",
+    "whatsapp_direct_url": "https://wa.me/?text=Selam%20M%C3%BC%C5%9Fteri%21%20Umar%C4%B1m%20g%C3%BCn%C3%BCn%20harika%20ge%C3%A7iyordur.%0A%0Aleohoca%20ile%20senin%20durumunu%20ve%20konu%C5%9Ftuklar%C4%B1m%C4%B1z%C4%B1%20de%C4%9Ferlendirdik%3B%20senin%20i%C3%A7in%20%C3%B6zel%20olarak%20%27LEO%20AI%20Otomasyon%20Paketi%27%20%C3%BCzerinde%20bir%20kolayl%C4%B1k%20sa%C4%9Flad%C4%B1k.%0A%0A%F0%9F%8E%81%20Sana%20%C3%96zel%20Teklifimiz%3A%20%2525%20%C4%B0ndirim%0A%E2%9C%A8%20Pakette%20Neler%20Var%3A%0A%20%E2%80%A2%207/24%20Takip%0A%20%E2%80%A2%20Meta%20Koruma%0A%20%E2%80%A2%20%C3%96zel%20Destek%0A%0ADetaylar%C4%B1%20do%C4%9Frudan%20konu%C5%9Fmak%2C%20akl%C4%B1na%20tak%C4%B1lanlar%C4%B1%20sormak%20veya%20an%C4%B1nda%20canl%C4%B1%20sesli%20g%C3%B6r%C3%BC%C5%9Fmek%20istersen%20hi%C3%A7bir%20%C5%9Fey%20y%C3%BCklemeden%20%C5%9Fu%20g%C3%BCvenli%20arama%20odas%C4%B1ndan%20hemen%20ba%C4%9Flanabilirsin%3A%0A%F0%9F%93%9E%20Canl%C4%B1%20Sesli%20G%C3%B6r%C3%BC%C5%9Fme%20Linki%3A%20https%3A//leo-ai-backend.onrender.com/call%3Froom%3Dleo-95907fa3%0A%0AFikrin%20nedir%2C%20ne%20dersin%3F",
+    "whatsapp_web_url": "https://web.whatsapp.com/send?text=Selam%20M%C3%BC%C5%9Fteri%21%20Umar%C4%B1m%20g%C3%BCn%C3%BCn%20harika%20ge%C3%A7iyordur.%0A%0Aleohoca%20ile%20senin%20durumunu%20ve%20konu%C5%9Ftuklar%C4%B1m%C4%B1z%C4%B1%20de%C4%9Ferlendirdik%3B%20senin%20i%C3%A7in%20%C3%B6zel%20olarak%20%27LEO%20AI%20Otomasyon%20Paketi%27%20%C3%BCzerinde%20bir%20kolayl%C4%B1k%20sa%C4%9Flad%C4%B1k.%0A%0A%F0%9F%8E%81%20Sana%20%C3%96zel%20Teklifimiz%3A%20%2525%20%C4%B0ndirim%0A%E2%9C%A8%20Pakette%20Neler%20Var%3A%0A%20%E2%80%A2%207/24%20Takip%0A%20%E2%80%A2%20Meta%20Koruma%0A%20%E2%80%A2%20%C3%96zel%20Destek%0A%0ADetaylar%C4%B1%20do%C4%9Frudan%20konu%C5%9Fmak%2C%20akl%C4%B1na%20tak%C4%B1lanlar%C4%B1%20sormak%20veya%20an%C4%B1nda%20canl%C4%B1%20sesli%20g%C3%B6r%C3%BC%C5%9Fmek%20istersen%20hi%C3%A7bir%20%C5%9Fey%20y%C3%BCklemeden%20%C5%9Fu%20g%C3%BCvenli%20arama%20odas%C4%B1ndan%20hemen%20ba%C4%9Flanabilirsin%3A%0A%F0%9F%93%9E%20Canl%C4%B1%20Sesli%20G%C3%B6r%C3%BC%C5%9Fme%20Linki%3A%20https%3A//leo-ai-backend.onrender.com/call%3Froom%3Dleo-95907fa3%0A%0AFikrin%20nedir%2C%20ne%20dersin%3F",
+    "created_at": "2026-09-25 23:28:20",
+    "status": "OFFER_READY",
+    "call_duration_seconds": 0,
+    "logs": []
+  },
+  "leo-74d66552": {
+    "room_id": "leo-74d66552",
+    "recipient_name": "Müşteri",
+    "phone_number": "",
+    "product_name": "LEO AI Otomasyon Paketi",
+    "discount": "%25 İndirim",
+    "features": "7/24 Takip, Meta Koruma, Özel Destek",
+    "custom_notes": "",
+    "call_url": "https://leo-ai-backend.onrender.com/call?room=leo-74d66552",
+    "message_text": "Selam Müşteri! Umarım günün harika geçiyordur.\n\nleohoca ile senin durumunu ve konuştuklarımızı değerlendirdik; senin için özel olarak 'LEO AI Otomasyon Paketi' üzerinde bir kolaylık sağladık.\n\n🎁 Sana Özel Teklifimiz: %25 İndirim\n✨ Pakette Neler Var:\n • 7/24 Takip\n • Meta Koruma\n • Özel Destek\n\nDetayları doğrudan konuşmak, aklına takılanları sormak veya anında canlı sesli görüşmek istersen hiçbir şey yüklemeden şu güvenli arama odasından hemen bağlanabilirsin:\n📞 Canlı Sesli Görüşme Linki: https://leo-ai-backend.onrender.com/call?room=leo-74d66552\n\nFikrin nedir, ne dersin?",
+    "whatsapp_direct_url": "https://wa.me/?text=Selam%20M%C3%BC%C5%9Fteri%21%20Umar%C4%B1m%20g%C3%BCn%C3%BCn%20harika%20ge%C3%A7iyordur.%0A%0Aleohoca%20ile%20senin%20durumunu%20ve%20konu%C5%9Ftuklar%C4%B1m%C4%B1z%C4%B1%20de%C4%9Ferlendirdik%3B%20senin%20i%C3%A7in%20%C3%B6zel%20olarak%20%27LEO%20AI%20Otomasyon%20Paketi%27%20%C3%BCzerinde%20bir%20kolayl%C4%B1k%20sa%C4%9Flad%C4%B1k.%0A%0A%F0%9F%8E%81%20Sana%20%C3%96zel%20Teklifimiz%3A%20%2525%20%C4%B0ndirim%0A%E2%9C%A8%20Pakette%20Neler%20Var%3A%0A%20%E2%80%A2%207/24%20Takip%0A%20%E2%80%A2%20Meta%20Koruma%0A%20%E2%80%A2%20%C3%96zel%20Destek%0A%0ADetaylar%C4%B1%20do%C4%9Frudan%20konu%C5%9Fmak%2C%20akl%C4%B1na%20tak%C4%B1lanlar%C4%B1%20sormak%20veya%20an%C4%B1nda%20canl%C4%B1%20sesli%20g%C3%B6r%C3%BC%C5%9Fmek%20istersen%20hi%C3%A7bir%20%C5%9Fey%20y%C3%BCklemeden%20%C5%9Fu%20g%C3%BCvenli%20arama%20odas%C4%B1ndan%20hemen%20ba%C4%9Flanabilirsin%3A%0A%F0%9F%93%9E%20Canl%C4%B1%20Sesli%20G%C3%B6r%C3%BC%C5%9Fme%20Linki%3A%20https%3A//leo-ai-backend.onrender.com/call%3Froom%3Dleo-74d66552%0A%0AFikrin%20nedir%2C%20ne%20dersin%3F",
+    "whatsapp_web_url": "https://web.whatsapp.com/send?text=Selam%20M%C3%BC%C5%9Fteri%21%20Umar%C4%B1m%20g%C3%BCn%C3%BCn%20harika%20ge%C3%A7iyordur.%0A%0Aleohoca%20ile%20senin%20durumunu%20ve%20konu%C5%9Ftuklar%C4%B1m%C4%B1z%C4%B1%20de%C4%9Ferlendirdik%3B%20senin%20i%C3%A7in%20%C3%B6zel%20olarak%20%27LEO%20AI%20Otomasyon%20Paketi%27%20%C3%BCzerinde%20bir%20kolayl%C4%B1k%20sa%C4%9Flad%C4%B1k.%0A%0A%F0%9F%8E%81%20Sana%20%C3%96zel%20Teklifimiz%3A%20%2525%20%C4%B0ndirim%0A%E2%9C%A8%20Pakette%20Neler%20Var%3A%0A%20%E2%80%A2%207/24%20Takip%0A%20%E2%80%A2%20Meta%20Koruma%0A%20%E2%80%A2%20%C3%96zel%20Destek%0A%0ADetaylar%C4%B1%20do%C4%9Frudan%20konu%C5%9Fmak%2C%20akl%C4%B1na%20tak%C4%B1lanlar%C4%B1%20sormak%20veya%20an%C4%B1nda%20canl%C4%B1%20sesli%20g%C3%B6r%C3%BC%C5%9Fmek%20istersen%20hi%C3%A7bir%20%C5%9Fey%20y%C3%BCklemeden%20%C5%9Fu%20g%C3%BCvenli%20arama%20odas%C4%B1ndan%20hemen%20ba%C4%9Flanabilirsin%3A%0A%F0%9F%93%9E%20Canl%C4%B1%20Sesli%20G%C3%B6r%C3%BC%C5%9Fme%20Linki%3A%20https%3A//leo-ai-backend.onrender.com/call%3Froom%3Dleo-74d66552%0A%0AFikrin%20nedir%2C%20ne%20dersin%3F",
+    "created_at": "2026-09-25 23:28:21",
+    "status": "OFFER_READY",
+    "call_duration_seconds": 0,
+    "logs": []
+  },
+  "leo-9b461a13": {
+    "room_id": "leo-9b461a13",
+    "recipient_name": "Müşteri",
+    "phone_number": "",
+    "product_name": "LEO AI Otomasyon Paketi",
+    "discount": "%25 İndirim",
+    "features": "7/24 Takip, Meta Koruma, Özel Destek",
+    "custom_notes": "",
+    "call_url": "https://leo-ai-backend.onrender.com/call?room=leo-9b461a13",
+    "message_text": "Selam Müşteri! Umarım günün harika geçiyordur.\n\nleohoca ile senin durumunu ve konuştuklarımızı değerlendirdik; senin için özel olarak 'LEO AI Otomasyon Paketi' üzerinde bir kolaylık sağladık.\n\n🎁 Sana Özel Teklifimiz: %25 İndirim\n✨ Pakette Neler Var:\n • 7/24 Takip\n • Meta Koruma\n • Özel Destek\n\nDetayları doğrudan konuşmak, aklına takılanları sormak veya anında canlı sesli görüşmek istersen hiçbir şey yüklemeden şu güvenli arama odasından hemen bağlanabilirsin:\n📞 Canlı Sesli Görüşme Linki: https://leo-ai-backend.onrender.com/call?room=leo-9b461a13\n\nFikrin nedir, ne dersin?",
+    "whatsapp_direct_url": "https://wa.me/?text=Selam%20M%C3%BC%C5%9Fteri%21%20Umar%C4%B1m%20g%C3%BCn%C3%BCn%20harika%20ge%C3%A7iyordur.%0A%0Aleohoca%20ile%20senin%20durumunu%20ve%20konu%C5%9Ftuklar%C4%B1m%C4%B1z%C4%B1%20de%C4%9Ferlendirdik%3B%20senin%20i%C3%A7in%20%C3%B6zel%20olarak%20%27LEO%20AI%20Otomasyon%20Paketi%27%20%C3%BCzerinde%20bir%20kolayl%C4%B1k%20sa%C4%9Flad%C4%B1k.%0A%0A%F0%9F%8E%81%20Sana%20%C3%96zel%20Teklifimiz%3A%20%2525%20%C4%B0ndirim%0A%E2%9C%A8%20Pakette%20Neler%20Var%3A%0A%20%E2%80%A2%207/24%20Takip%0A%20%E2%80%A2%20Meta%20Koruma%0A%20%E2%80%A2%20%C3%96zel%20Destek%0A%0ADetaylar%C4%B1%20do%C4%9Frudan%20konu%C5%9Fmak%2C%20akl%C4%B1na%20tak%C4%B1lanlar%C4%B1%20sormak%20veya%20an%C4%B1nda%20canl%C4%B1%20sesli%20g%C3%B6r%C3%BC%C5%9Fmek%20istersen%20hi%C3%A7bir%20%C5%9Fey%20y%C3%BCklemeden%20%C5%9Fu%20g%C3%BCvenli%20arama%20odas%C4%B1ndan%20hemen%20ba%C4%9Flanabilirsin%3A%0A%F0%9F%93%9E%20Canl%C4%B1%20Sesli%20G%C3%B6r%C3%BC%C5%9Fme%20Linki%3A%20https%3A//leo-ai-backend.onrender.com/call%3Froom%3Dleo-9b461a13%0A%0AFikrin%20nedir%2C%20ne%20dersin%3F",
+    "whatsapp_web_url": "https://web.whatsapp.com/send?text=Selam%20M%C3%BC%C5%9Fteri%21%20Umar%C4%B1m%20g%C3%BCn%C3%BCn%20harika%20ge%C3%A7iyordur.%0A%0Aleohoca%20ile%20senin%20durumunu%20ve%20konu%C5%9Ftuklar%C4%B1m%C4%B1z%C4%B1%20de%C4%9Ferlendirdik%3B%20senin%20i%C3%A7in%20%C3%B6zel%20olarak%20%27LEO%20AI%20Otomasyon%20Paketi%27%20%C3%BCzerinde%20bir%20kolayl%C4%B1k%20sa%C4%9Flad%C4%B1k.%0A%0A%F0%9F%8E%81%20Sana%20%C3%96zel%20Teklifimiz%3A%20%2525%20%C4%B0ndirim%0A%E2%9C%A8%20Pakette%20Neler%20Var%3A%0A%20%E2%80%A2%207/24%20Takip%0A%20%E2%80%A2%20Meta%20Koruma%0A%20%E2%80%A2%20%C3%96zel%20Destek%0A%0ADetaylar%C4%B1%20do%C4%9Frudan%20konu%C5%9Fmak%2C%20akl%C4%B1na%20tak%C4%B1lanlar%C4%B1%20sormak%20veya%20an%C4%B1nda%20canl%C4%B1%20sesli%20g%C3%B6r%C3%BC%C5%9Fmek%20istersen%20hi%C3%A7bir%20%C5%9Fey%20y%C3%BCklemeden%20%C5%9Fu%20g%C3%BCvenli%20arama%20odas%C4%B1ndan%20hemen%20ba%C4%9Flanabilirsin%3A%0A%F0%9F%93%9E%20Canl%C4%B1%20Sesli%20G%C3%B6r%C3%BC%C5%9Fme%20Linki%3A%20https%3A//leo-ai-backend.onrender.com/call%3Froom%3Dleo-9b461a13%0A%0AFikrin%20nedir%2C%20ne%20dersin%3F",
+    "created_at": "2026-09-25 23:28:21",
+    "status": "OFFER_READY",
+    "call_duration_seconds": 0,
+    "logs": []
+  },
+  "leo-cc6277ea": {
+    "room_id": "leo-cc6277ea",
+    "recipient_name": "Müşteri",
+    "phone_number": "",
+    "product_name": "LEO AI Otomasyon Paketi",
+    "discount": "%25 İndirim",
+    "features": "7/24 Takip, Meta Koruma, Özel Destek",
+    "custom_notes": "",
+    "call_url": "https://leo-ai-backend.onrender.com/call?room=leo-cc6277ea",
+    "message_text": "Selam Müşteri! Umarım günün harika geçiyordur.\n\nleohoca ile senin durumunu ve konuştuklarımızı değerlendirdik; senin için özel olarak 'LEO AI Otomasyon Paketi' üzerinde bir kolaylık sağladık.\n\n🎁 Sana Özel Teklifimiz: %25 İndirim\n✨ Pakette Neler Var:\n • 7/24 Takip\n • Meta Koruma\n • Özel Destek\n\nDetayları doğrudan konuşmak, aklına takılanları sormak veya anında canlı sesli görüşmek istersen hiçbir şey yüklemeden şu güvenli arama odasından hemen bağlanabilirsin:\n📞 Canlı Sesli Görüşme Linki: https://leo-ai-backend.onrender.com/call?room=leo-cc6277ea\n\nFikrin nedir, ne dersin?",
+    "whatsapp_direct_url": "https://wa.me/?text=Selam%20M%C3%BC%C5%9Fteri%21%20Umar%C4%B1m%20g%C3%BCn%C3%BCn%20harika%20ge%C3%A7iyordur.%0A%0Aleohoca%20ile%20senin%20durumunu%20ve%20konu%C5%9Ftuklar%C4%B1m%C4%B1z%C4%B1%20de%C4%9Ferlendirdik%3B%20senin%20i%C3%A7in%20%C3%B6zel%20olarak%20%27LEO%20AI%20Otomasyon%20Paketi%27%20%C3%BCzerinde%20bir%20kolayl%C4%B1k%20sa%C4%9Flad%C4%B1k.%0A%0A%F0%9F%8E%81%20Sana%20%C3%96zel%20Teklifimiz%3A%20%2525%20%C4%B0ndirim%0A%E2%9C%A8%20Pakette%20Neler%20Var%3A%0A%20%E2%80%A2%207/24%20Takip%0A%20%E2%80%A2%20Meta%20Koruma%0A%20%E2%80%A2%20%C3%96zel%20Destek%0A%0ADetaylar%C4%B1%20do%C4%9Frudan%20konu%C5%9Fmak%2C%20akl%C4%B1na%20tak%C4%B1lanlar%C4%B1%20sormak%20veya%20an%C4%B1nda%20canl%C4%B1%20sesli%20g%C3%B6r%C3%BC%C5%9Fmek%20istersen%20hi%C3%A7bir%20%C5%9Fey%20y%C3%BCklemeden%20%C5%9Fu%20g%C3%BCvenli%20arama%20odas%C4%B1ndan%20hemen%20ba%C4%9Flanabilirsin%3A%0A%F0%9F%93%9E%20Canl%C4%B1%20Sesli%20G%C3%B6r%C3%BC%C5%9Fme%20Linki%3A%20https%3A//leo-ai-backend.onrender.com/call%3Froom%3Dleo-cc6277ea%0A%0AFikrin%20nedir%2C%20ne%20dersin%3F",
+    "whatsapp_web_url": "https://web.whatsapp.com/send?text=Selam%20M%C3%BC%C5%9Fteri%21%20Umar%C4%B1m%20g%C3%BCn%C3%BCn%20harika%20ge%C3%A7iyordur.%0A%0Aleohoca%20ile%20senin%20durumunu%20ve%20konu%C5%9Ftuklar%C4%B1m%C4%B1z%C4%B1%20de%C4%9Ferlendirdik%3B%20senin%20i%C3%A7in%20%C3%B6zel%20olarak%20%27LEO%20AI%20Otomasyon%20Paketi%27%20%C3%BCzerinde%20bir%20kolayl%C4%B1k%20sa%C4%9Flad%C4%B1k.%0A%0A%F0%9F%8E%81%20Sana%20%C3%96zel%20Teklifimiz%3A%20%2525%20%C4%B0ndirim%0A%E2%9C%A8%20Pakette%20Neler%20Var%3A%0A%20%E2%80%A2%207/24%20Takip%0A%20%E2%80%A2%20Meta%20Koruma%0A%20%E2%80%A2%20%C3%96zel%20Destek%0A%0ADetaylar%C4%B1%20do%C4%9Frudan%20konu%C5%9Fmak%2C%20akl%C4%B1na%20tak%C4%B1lanlar%C4%B1%20sormak%20veya%20an%C4%B1nda%20canl%C4%B1%20sesli%20g%C3%B6r%C3%BC%C5%9Fmek%20istersen%20hi%C3%A7bir%20%C5%9Fey%20y%C3%BCklemeden%20%C5%9Fu%20g%C3%BCvenli%20arama%20odas%C4%B1ndan%20hemen%20ba%C4%9Flanabilirsin%3A%0A%F0%9F%93%9E%20Canl%C4%B1%20Sesli%20G%C3%B6r%C3%BC%C5%9Fme%20Linki%3A%20https%3A//leo-ai-backend.onrender.com/call%3Froom%3Dleo-cc6277ea%0A%0AFikrin%20nedir%2C%20ne%20dersin%3F",
+    "created_at": "2026-09-25 23:28:22",
+    "status": "OFFER_READY",
+    "call_duration_seconds": 0,
+    "logs": []
+  },
+  "leo-ec0b7e70": {
+    "room_id": "leo-ec0b7e70",
+    "recipient_name": "Müşteri",
+    "phone_number": "",
+    "product_name": "LEO AI Otomasyon Paketi",
+    "discount": "%25 İndirim",
+    "features": "7/24 Takip, Meta Koruma, Özel Destek",
+    "custom_notes": "",
+    "call_url": "https://leo-ai-backend.onrender.com/call?room=leo-ec0b7e70",
+    "message_text": "Selam Müşteri! Umarım günün harika geçiyordur.\n\nleohoca ile senin durumunu ve konuştuklarımızı değerlendirdik; senin için özel olarak 'LEO AI Otomasyon Paketi' üzerinde bir kolaylık sağladık.\n\n🎁 Sana Özel Teklifimiz: %25 İndirim\n✨ Pakette Neler Var:\n • 7/24 Takip\n • Meta Koruma\n • Özel Destek\n\nDetayları doğrudan konuşmak, aklına takılanları sormak veya anında canlı sesli görüşmek istersen hiçbir şey yüklemeden şu güvenli arama odasından hemen bağlanabilirsin:\n📞 Canlı Sesli Görüşme Linki: https://leo-ai-backend.onrender.com/call?room=leo-ec0b7e70\n\nFikrin nedir, ne dersin?",
+    "whatsapp_direct_url": "https://wa.me/?text=Selam%20M%C3%BC%C5%9Fteri%21%20Umar%C4%B1m%20g%C3%BCn%C3%BCn%20harika%20ge%C3%A7iyordur.%0A%0Aleohoca%20ile%20senin%20durumunu%20ve%20konu%C5%9Ftuklar%C4%B1m%C4%B1z%C4%B1%20de%C4%9Ferlendirdik%3B%20senin%20i%C3%A7in%20%C3%B6zel%20olarak%20%27LEO%20AI%20Otomasyon%20Paketi%27%20%C3%BCzerinde%20bir%20kolayl%C4%B1k%20sa%C4%9Flad%C4%B1k.%0A%0A%F0%9F%8E%81%20Sana%20%C3%96zel%20Teklifimiz%3A%20%2525%20%C4%B0ndirim%0A%E2%9C%A8%20Pakette%20Neler%20Var%3A%0A%20%E2%80%A2%207/24%20Takip%0A%20%E2%80%A2%20Meta%20Koruma%0A%20%E2%80%A2%20%C3%96zel%20Destek%0A%0ADetaylar%C4%B1%20do%C4%9Frudan%20konu%C5%9Fmak%2C%20akl%C4%B1na%20tak%C4%B1lanlar%C4%B1%20sormak%20veya%20an%C4%B1nda%20canl%C4%B1%20sesli%20g%C3%B6r%C3%BC%C5%9Fmek%20istersen%20hi%C3%A7bir%20%C5%9Fey%20y%C3%BCklemeden%20%C5%9Fu%20g%C3%BCvenli%20arama%20odas%C4%B1ndan%20hemen%20ba%C4%9Flanabilirsin%3A%0A%F0%9F%93%9E%20Canl%C4%B1%20Sesli%20G%C3%B6r%C3%BC%C5%9Fme%20Linki%3A%20https%3A//leo-ai-backend.onrender.com/call%3Froom%3Dleo-ec0b7e70%0A%0AFikrin%20nedir%2C%20ne%20dersin%3F",
+    "whatsapp_web_url": "https://web.whatsapp.com/send?text=Selam%20M%C3%BC%C5%9Fteri%21%20Umar%C4%B1m%20g%C3%BCn%C3%BCn%20harika%20ge%C3%A7iyordur.%0A%0Aleohoca%20ile%20senin%20durumunu%20ve%20konu%C5%9Ftuklar%C4%B1m%C4%B1z%C4%B1%20de%C4%9Ferlendirdik%3B%20senin%20i%C3%A7in%20%C3%B6zel%20olarak%20%27LEO%20AI%20Otomasyon%20Paketi%27%20%C3%BCzerinde%20bir%20kolayl%C4%B1k%20sa%C4%9Flad%C4%B1k.%0A%0A%F0%9F%8E%81%20Sana%20%C3%96zel%20Teklifimiz%3A%20%2525%20%C4%B0ndirim%0A%E2%9C%A8%20Pakette%20Neler%20Var%3A%0A%20%E2%80%A2%207/24%20Takip%0A%20%E2%80%A2%20Meta%20Koruma%0A%20%E2%80%A2%20%C3%96zel%20Destek%0A%0ADetaylar%C4%B1%20do%C4%9Frudan%20konu%C5%9Fmak%2C%20akl%C4%B1na%20tak%C4%B1lanlar%C4%B1%20sormak%20veya%20an%C4%B1nda%20canl%C4%B1%20sesli%20g%C3%B6r%C3%BC%C5%9Fmek%20istersen%20hi%C3%A7bir%20%C5%9Fey%20y%C3%BCklemeden%20%C5%9Fu%20g%C3%BCvenli%20arama%20odas%C4%B1ndan%20hemen%20ba%C4%9Flanabilirsin%3A%0A%F0%9F%93%9E%20Canl%C4%B1%20Sesli%20G%C3%B6r%C3%BC%C5%9Fme%20Linki%3A%20https%3A//leo-ai-backend.onrender.com/call%3Froom%3Dleo-ec0b7e70%0A%0AFikrin%20nedir%2C%20ne%20dersin%3F",
+    "created_at": "2026-09-25 23:28:22",
+    "status": "OFFER_READY",
+    "call_duration_seconds": 0,
+    "logs": []
+  },
+  "leo-a7167894": {
+    "room_id": "leo-a7167894",
+    "recipient_name": "Leo Test",
+    "phone_number": "",
+    "product_name": "LEO AI Akıllı Otomasyon Paketi",
+    "discount": "%30 İndirim",
+    "features": "7/24 Kesintisiz Takip, Meta Hesap Koruma, Otomatik Asistan",
+    "custom_notes": "",
+    "call_url": "https://leo-ai-backend.onrender.com/call?room=leo-a7167894",
+    "message_text": "Selam Leo Test! Umarım günün harika geçiyordur.\n\nleohoca ile senin durumunu ve konuştuklarımızı değerlendirdik; senin için özel olarak 'LEO AI Akıllı Otomasyon Paketi' üzerinde bir kolaylık sağladık.\n\n🎁 Sana Özel Teklifimiz: %30 İndirim\n✨ Pakette Neler Var:\n • 7/24 Kesintisiz Takip\n • Meta Hesap Koruma\n • Otomatik Asistan\n\nDetayları doğrudan konuşmak, aklına takılanları sormak veya anında canlı sesli görüşmek istersen hiçbir şey yüklemeden şu güvenli arama odasından hemen bağlanabilirsin:\n📞 Canlı Sesli Görüşme Linki: https://leo-ai-backend.onrender.com/call?room=leo-a7167894\n\nFikrin nedir, ne dersin?",
+    "whatsapp_direct_url": "https://wa.me/?text=Selam%20Leo%20Test%21%20Umar%C4%B1m%20g%C3%BCn%C3%BCn%20harika%20ge%C3%A7iyordur.%0A%0Aleohoca%20ile%20senin%20durumunu%20ve%20konu%C5%9Ftuklar%C4%B1m%C4%B1z%C4%B1%20de%C4%9Ferlendirdik%3B%20senin%20i%C3%A7in%20%C3%B6zel%20olarak%20%27LEO%20AI%20Ak%C4%B1ll%C4%B1%20Otomasyon%20Paketi%27%20%C3%BCzerinde%20bir%20kolayl%C4%B1k%20sa%C4%9Flad%C4%B1k.%0A%0A%F0%9F%8E%81%20Sana%20%C3%96zel%20Teklifimiz%3A%20%2530%20%C4%B0ndirim%0A%E2%9C%A8%20Pakette%20Neler%20Var%3A%0A%20%E2%80%A2%207/24%20Kesintisiz%20Takip%0A%20%E2%80%A2%20Meta%20Hesap%20Koruma%0A%20%E2%80%A2%20Otomatik%20Asistan%0A%0ADetaylar%C4%B1%20do%C4%9Frudan%20konu%C5%9Fmak%2C%20akl%C4%B1na%20tak%C4%B1lanlar%C4%B1%20sormak%20veya%20an%C4%B1nda%20canl%C4%B1%20sesli%20g%C3%B6r%C3%BC%C5%9Fmek%20istersen%20hi%C3%A7bir%20%C5%9Fey%20y%C3%BCklemeden%20%C5%9Fu%20g%C3%BCvenli%20arama%20odas%C4%B1ndan%20hemen%20ba%C4%9Flanabilirsin%3A%0A%F0%9F%93%9E%20Canl%C4%B1%20Sesli%20G%C3%B6r%C3%BC%C5%9Fme%20Linki%3A%20https%3A//leo-ai-backend.onrender.com/call%3Froom%3Dleo-a7167894%0A%0AFikrin%20nedir%2C%20ne%20dersin%3F",
+    "whatsapp_web_url": "https://web.whatsapp.com/send?text=Selam%20Leo%20Test%21%20Umar%C4%B1m%20g%C3%BCn%C3%BCn%20harika%20ge%C3%A7iyordur.%0A%0Aleohoca%20ile%20senin%20durumunu%20ve%20konu%C5%9Ftuklar%C4%B1m%C4%B1z%C4%B1%20de%C4%9Ferlendirdik%3B%20senin%20i%C3%A7in%20%C3%B6zel%20olarak%20%27LEO%20AI%20Ak%C4%B1ll%C4%B1%20Otomasyon%20Paketi%27%20%C3%BCzerinde%20bir%20kolayl%C4%B1k%20sa%C4%9Flad%C4%B1k.%0A%0A%F0%9F%8E%81%20Sana%20%C3%96zel%20Teklifimiz%3A%20%2530%20%C4%B0ndirim%0A%E2%9C%A8%20Pakette%20Neler%20Var%3A%0A%20%E2%80%A2%207/24%20Kesintisiz%20Takip%0A%20%E2%80%A2%20Meta%20Hesap%20Koruma%0A%20%E2%80%A2%20Otomatik%20Asistan%0A%0ADetaylar%C4%B1%20do%C4%9Frudan%20konu%C5%9Fmak%2C%20akl%C4%B1na%20tak%C4%B1lanlar%C4%B1%20sormak%20veya%20an%C4%B1nda%20canl%C4%B1%20sesli%20g%C3%B6r%C3%BC%C5%9Fmek%20istersen%20hi%C3%A7bir%20%C5%9Fey%20y%C3%BCklemeden%20%C5%9Fu%20g%C3%BCvenli%20arama%20odas%C4%B1ndan%20hemen%20ba%C4%9Flanabilirsin%3A%0A%F0%9F%93%9E%20Canl%C4%B1%20Sesli%20G%C3%B6r%C3%BC%C5%9Fme%20Linki%3A%20https%3A//leo-ai-backend.onrender.com/call%3Froom%3Dleo-a7167894%0A%0AFikrin%20nedir%2C%20ne%20dersin%3F",
+    "created_at": "2026-09-25 23:33:22",
+    "status": "OFFER_READY",
+    "call_duration_seconds": 0,
+    "logs": [],
+    "chat_history": [
+      {
+        "id": "msg_1790372002607",
+        "sender": "customer",
+        "text": "Fiyat çok yüksek geldi biraz indirim yapabilir misiniz?",
+        "time": "23:33",
+        "timestamp": 1790372002.6078138
+      },
+      {
+        "id": "msg_1790372005027",
+        "sender": "leo",
+        "text": "Çok haklısınız Leo Bey, bütçenizi anlıyoruz 😊 Sizin için hemen özel bir kıyak yapalım ve bu harika **%30 indirim** fırsatını sunalım! \n\n7/24 kesintisiz takip, hesap koruma ve akıllı asistan özelliklerimizle işinizi uçuracak bu paketi kaçırmayın derim. 🚀 Detayları hemen telefonda konuşmak isterseniz, aşağıdaki linke tıklayarak benimle canlı sesli görüşme başlatabilirsiniz; orada her konuda anlaşırız! 🤝✨\n\n👉 https://leo-ai-backend.onrender.com/call?room=leo-a7167894 📞",
+        "time": "23:33",
+        "timestamp": 1790372005.0275662
+      },
+      {
+        "id": "msg_1790426993372",
+        "sender": "customer",
+        "text": "Pakette tam olarak hangi özellikler var?",
+        "time": "14:49",
+        "timestamp": 1790426993.372267
+      },
+      {
+        "id": "msg_1790426994752",
+        "sender": "leo",
+        "text": "Harika bir soru Leo Bey! 😊 Paketimizde işinizi kafaya takmanızı önleyecek 7/24 kesintisiz takip, Meta hesaplarınızı güvenceye alan özel hesap koruma ve sizin yerinize her şeyi yöneten süper akıllı bir asistan bulunuyor. Üstelik tüm bu güçlü özellikleri şu an size özel **%30 indirim** avantajıyla sunuyoruz! 🚀\n\nGelin detayları telefonda, kahvemizi yudumlar gibi hızlıca çözelim; aşağıdaki linke tıklayarak hemen canlı sesli görüşme başlatabilirsiniz, orada her konuda anlaşırız! 🤝✨\n\n👉 https://leo-ai-backend.onrender.com/call?room=leo-a7167894 📞",
+        "time": "14:49",
+        "timestamp": 1790426994.7523131
+      },
+      {
+        "id": "msg_1790426996777",
+        "sender": "customer",
+        "text": "Sizinle canlı telefonda sesli konuşabilir miyiz?",
+        "time": "14:49",
+        "timestamp": 1790426996.777216
+      },
+      {
+        "id": "msg_1790426997952",
+        "sender": "leo",
+        "text": "Elbette Leo Bey, ne demek! Zaten bunun için buradayım 😊 Hemen aşağıdaki linke tıklayarak benimle canlı sesli görüşme başlatabilirsiniz, kafanıza takılan her şeyi sesli olarak uzun uzun konuşalım 📞✨\n\n👉 https://leo-ai-backend.onrender.com/call?room=leo-a7167894 🤝",
+        "time": "14:49",
+        "timestamp": 1790426997.952789
+      },
+      {
+        "id": "msg_1790427007693",
+        "sender": "customer",
+        "text": "Tamam anlaştık, nasıl ödeyebilirim?",
+        "time": "14:50",
+        "timestamp": 1790427007.693836
+      },
+      {
+        "id": "msg_1790427008968",
+        "sender": "leo",
+        "text": "Harika bir karar Leo Bey, pişman olmayacağınıza eminim! 😊 Ödeme işlemini ve %30 indirimli fırsatın detaylarını hemen halletmek için aşağıdaki linke tıklayarak canlı sesli görüşme başlatabilirsiniz, orada her şeyi hızlıca çözeriz 🤝✨\n\n👉 https://leo-ai-backend.onrender.com/call?room=leo-a7167894 📞",
+        "time": "14:50",
+        "timestamp": 1790427008.968425
+      },
+      {
+        "id": "msg_1790427016032",
+        "sender": "customer",
+        "text": "Merhaba, bana daha fazla indirim yapabilir misiniz?",
+        "time": "14:50",
+        "timestamp": 1790427016.032827
+      },
+      {
+        "id": "msg_1790427177398",
+        "sender": "leo",
+        "text": "Vay, Leo Bey pazarlığı sıkı tutuyorsunuz! 😊 Normalde sunduğumuz bu %30'luk indirim bile gerçekten devasa bir fırsat, çünkü sistemin getireceği kazanç bunun katbekat üzerinde olacak. \n\nGelin bu konuyu hemen telefon hattımızda, bir kahve eşliğinde çözelim; aşağıdaki linke tıklayarak benimle canlı sesli görüşme başlatın, sizin için yapabileceğimiz son güzelliği orada konuşalım! 🤝✨\n\n👉 https://leo-ai-backend.onrender.com/call?room=leo-a7167894 📞",
+        "time": "14:52",
+        "timestamp": 1790427177.399418
+      }
+    ]
   }
 }

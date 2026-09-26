@@ -567,6 +567,42 @@ class JarvisLive:
                 )
                 result = r or "Toplu WhatsApp mesajı işlemi tamamlandı."
 
+            elif name == "create_whatsapp_sales_campaign":
+                from actions.whatsapp_sales_agent import create_sales_campaign
+                camp = await loop.run_in_executor(
+                    None,
+                    lambda: create_sales_campaign(
+                        recipient_name=args.get("recipient_name", ""),
+                        phone_number=args.get("phone_number", ""),
+                        product_name=args.get("product_name", "LEO AI Akıllı Otomasyon Paketi"),
+                        discount=args.get("discount", "%20 İndirim"),
+                        features=args.get("features", "7/24 Kesintisiz Takip, Meta Hesap Koruma"),
+                        custom_notes=args.get("custom_notes", ""),
+                    ),
+                )
+                result = (
+                    f"✅ WhatsApp Satış ve Arama Kampanyası Hazırlandı:\n"
+                    f"• Müşteri: {camp['recipient_name']}\n"
+                    f"• İndirim: {camp['discount']}\n"
+                    f"• Canlı Sesli Görüşme Odası: {camp['call_url']}\n"
+                    f"• WhatsApp Linki: {camp['whatsapp_direct_url']}"
+                )
+
+            elif name == "whatsapp_bot_chat":
+                from actions.whatsapp_sales_agent import generate_whatsapp_bot_reply
+                res = await loop.run_in_executor(
+                    None,
+                    lambda: generate_whatsapp_bot_reply(
+                        room_id=args.get("room_id", ""),
+                        incoming_message=args.get("message", ""),
+                        sender_name=args.get("sender_name", "Müşteri"),
+                    ),
+                )
+                result = (
+                    f"🤖 LEO WhatsApp Yanıtı:\n{res.get('reply')}\n\n"
+                    f"💬 WhatsApp Linki: {res.get('whatsapp_reply_url')}"
+                )
+
             elif name == "find_location":
                 r = await loop.run_in_executor(
                     None,

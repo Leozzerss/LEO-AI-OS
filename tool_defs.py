@@ -467,6 +467,32 @@ TOOL_DECLARATIONS = [
         }
     },
     {
+        "name": "whatsapp_bot_chat",
+        "description": (
+            "WhatsApp botu ile müşteri arasında ikna edici, insansı mesajlaşma ve pazarlık yanıtı üretir. "
+            "Kullanıcı 'WhatsApp'tan müşteriye cevap yaz', 'Müşteri fiyat çok yüksek dedi ne diyelim', "
+            "'WhatsApp botuyla konuş' dediğinde kullan."
+        ),
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "message": {
+                    "type": "STRING",
+                    "description": "Müşteriden gelen veya cevaplanacak mesaj metni"
+                },
+                "room_id": {
+                    "type": "STRING",
+                    "description": "Varsa teklif/oda kimliği (Örn: 'leo-1234abcd')"
+                },
+                "sender_name": {
+                    "type": "STRING",
+                    "description": "Müşterinin veya kişinin adı"
+                }
+            },
+            "required": ["message"]
+        }
+    },
+    {
         "name": "save_whatsapp_contact",
         "description": (
             "Sık kullanılan bir WhatsApp kişisini adı ve telefon numarasıyla kalıcı belleğe kaydeder. "

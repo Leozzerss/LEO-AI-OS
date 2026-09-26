@@ -860,6 +860,177 @@ window.createSalesOfferFromModal = async function() {
   }
 };
 
+window.switchSalesTab = function(tab) {
+  const secCreate = document.getElementById("sales-section-create");
+  const secChat = document.getElementById("sales-section-chat");
+  const btnCreate = document.getElementById("tab-btn-create");
+  const btnChat = document.getElementById("tab-btn-chat");
+
+  if (tab === "chat") {
+    if (secCreate) secCreate.style.display = "none";
+    if (secChat) secChat.style.display = "block";
+    if (btnCreate) {
+      btnCreate.style.background = "rgba(255,255,255,0.08)";
+      btnCreate.style.color = "#94a3b8";
+    }
+    if (btnChat) {
+      btnChat.style.background = "#25d366";
+      btnChat.style.color = "#020d18";
+    }
+    const select = document.getElementById("chat-campaign-select");
+    if (select && select.value) {
+      window.loadWhatsAppChat(select.value);
+    }
+  } else {
+    if (secCreate) secCreate.style.display = "block";
+    if (secChat) secChat.style.display = "none";
+    if (btnCreate) {
+      btnCreate.style.background = "#00f3ff";
+      btnCreate.style.color = "#020d18";
+    }
+    if (btnChat) {
+      btnChat.style.background = "rgba(255,255,255,0.08)";
+      btnChat.style.color = "#94a3b8";
+    }
+  }
+};
+
+window.selectCampaignForChat = function(roomId, name) {
+  window.switchSalesTab("chat");
+  const select = document.getElementById("chat-campaign-select");
+  if (select) {
+    select.value = roomId;
+  }
+  window.loadWhatsAppChat(roomId);
+};
+
+window.onChatCampaignChange = function() {
+  const select = document.getElementById("chat-campaign-select");
+  if (select && select.value) {
+    window.loadWhatsAppChat(select.value);
+  } else {
+    const box = document.getElementById("whatsapp-chat-box");
+    if (box) {
+      box.innerHTML = `<div style="text-align:center; color:#64748b; font-size:11px; margin:auto 0;">🤖 Yeni müşteri sohbeti. Aşağıdan mesaj yazıp gönderebilirsiniz.</div>`;
+    }
+  }
+};
+
+window.loadWhatsAppChat = async function(roomId) {
+  if (!roomId) return;
+  const box = document.getElementById("whatsapp-chat-box");
+  if (!box) return;
+
+  try {
+    const res = await fetch(`/api/whatsapp/campaign/${roomId}/chat`);
+    const data = await res.json();
+    if (data.ok && Array.isArray(data.chat_history) && data.chat_history.length > 0) {
+      box.innerHTML = data.chat_history.map(m => {
+        const isCustomer = m.sender === "customer";
+        const bg = isCustomer ? "rgba(255,255,255,0.08)" : "rgba(37,211,102,0.18)";
+        const align = isCustomer ? "flex-start" : "flex-end";
+        const border = isCustomer ? "1px solid rgba(255,255,255,0.15)" : "1px solid rgba(37,211,102,0.4)";
+        const title = isCustomer ? "Müşteri" : "LEO Bot";
+        const titleColor = isCustomer ? "#cbd5e1" : "#25d366";
+        return `
+          <div style="align-self:${align}; max-width:85%; background:${bg}; border:${border}; border-radius:10px; padding:8px 12px; font-size:12px; line-height:1.4;">
+            <div style="font-weight:700; font-size:10px; color:${titleColor}; margin-bottom:2px;">${title} • ${m.time || ''}</div>
+            <div style="color:#fff; word-break:break-word;">${m.text}</div>
+          </div>
+        `;
+      }).join("");
+      box.scrollTop = box.scrollHeight;
+    } else {
+      box.innerHTML = `<div style="text-align:center; color:#64748b; font-size:11px; margin:auto 0;">Henüz kayıtlı mesaj yok. Müşteriden gelen soruyu yazın veya hızlı butonları kullanın.</div>`;
+    }
+
+    if (data.campaign) {
+      const actBar = document.getElementById("chat-actions-bar");
+      const btnWa = document.getElementById("btn-open-wa-reply");
+      const btnCall = document.getElementById("btn-open-call-room");
+      if (actBar && btnWa && btnCall) {
+        actBar.style.display = "flex";
+        btnWa.href = data.campaign.whatsapp_direct_url || "#";
+        btnCall.href = data.campaign.call_url || "#";
+      }
+    }
+  } catch(e) {
+    console.error(e);
+  }
+};
+
+window.quickSimulateChat = function(text) {
+  const input = document.getElementById("chat-input-msg");
+  if (input) {
+    input.value = text;
+    window.sendWhatsAppBotMsg();
+  }
+};
+
+window.sendWhatsAppBotMsg = async function() {
+  const input = document.getElementById("chat-input-msg");
+  const msg = input?.value.trim();
+  if (!msg) return;
+
+  const select = document.getElementById("chat-campaign-select");
+  const roomId = select?.value || "";
+  const box = document.getElementById("whatsapp-chat-box");
+
+  if (box) {
+    box.innerHTML += `
+      <div style="align-self:flex-start; max-width:85%; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:10px; padding:8px 12px; font-size:12px;">
+        <div style="font-weight:700; font-size:10px; color:#cbd5e1; margin-bottom:2px;">Müşteri</div>
+        <div style="color:#fff;">${msg}</div>
+      </div>
+      <div id="leo-thinking-bubble" style="align-self:flex-end; max-width:85%; background:rgba(37,211,102,0.1); border:1px solid rgba(37,211,102,0.25); border-radius:10px; padding:8px 12px; font-size:12px; color:#25d366; font-style:italic;">
+        LEO yanıt hazırlıyor...
+      </div>
+    `;
+    box.scrollTop = box.scrollHeight;
+  }
+  input.value = "";
+
+  try {
+    const res = await fetch("/api/whatsapp/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        room_id: roomId,
+        message: msg,
+        sender_name: "Müşteri"
+      })
+    });
+    const data = await res.json();
+    const thinking = document.getElementById("leo-thinking-bubble");
+    if (thinking) thinking.remove();
+
+    if (data.ok && box) {
+      box.innerHTML += `
+        <div style="align-self:flex-end; max-width:85%; background:rgba(37,211,102,0.18); border:1px solid rgba(37,211,102,0.4); border-radius:10px; padding:8px 12px; font-size:12px; line-height:1.4;">
+          <div style="font-weight:700; font-size:10px; color:#25d366; margin-bottom:2px;">LEO Bot</div>
+          <div style="color:#fff; word-break:break-word;">${data.reply}</div>
+        </div>
+      `;
+      box.scrollTop = box.scrollHeight;
+
+      const actBar = document.getElementById("chat-actions-bar");
+      const btnWa = document.getElementById("btn-open-wa-reply");
+      const btnCall = document.getElementById("btn-open-call-room");
+      if (actBar && btnWa && btnCall) {
+        actBar.style.display = "flex";
+        btnWa.href = data.whatsapp_reply_url || "#";
+        btnCall.href = `/call?room=${data.room_id}`;
+      }
+    } else if (box) {
+      box.innerHTML += `<div style="color:#ff4466; font-size:11px; text-align:center;">Hata: ${data.error || 'Cevap alınamadı'}</div>`;
+    }
+  } catch(e) {
+    const thinking = document.getElementById("leo-thinking-bubble");
+    if (thinking) thinking.remove();
+    if (box) box.innerHTML += `<div style="color:#ff4466; font-size:11px; text-align:center;">Bağlantı hatası: ${e.message}</div>`;
+  }
+};
+
 $("modal-close")?.addEventListener("click", () => {
   $("tool-modal")?.classList.add("hidden");
 });
