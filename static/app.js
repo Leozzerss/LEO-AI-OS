@@ -807,16 +807,17 @@ window.sendMetaAppealFromModal = async function() {
 };
 
 window.createSalesOfferFromModal = async function() {
-  const recipient = document.getElementById("sales-recipient")?.value.trim() || "Müşteri";
+  const recipient = document.getElementById("sales-recipient")?.value.trim() || "Klient";
+  const lang = document.getElementById("sales-lang")?.value || "sq";
   const phone = document.getElementById("sales-phone")?.value.trim() || "";
-  const product = document.getElementById("sales-product")?.value.trim() || "LEO AI Akıllı Otomasyon Paketi";
-  const discount = document.getElementById("sales-discount")?.value.trim() || "%20 İndirim";
+  const product = document.getElementById("sales-product")?.value.trim() || (lang === 'sq' ? "Paketa e Sigurisë LEO AI" : "LEO AI Akıllı Otomasyon Paketi");
+  const discount = document.getElementById("sales-discount")?.value.trim() || (lang === 'sq' ? "%25 Zbritje Ekskluzive" : "%20 İndirim");
   const features = document.getElementById("sales-features")?.value.trim() || "";
   const resBox = document.getElementById("sales-result-box");
 
   if (resBox) {
     resBox.style.display = "block";
-    resBox.innerHTML = `<div style="color:var(--cyan); font-size:12px;">WhatsApp teklifi ve sesli arama odası hazırlanıyor...</div>`;
+    resBox.innerHTML = `<div style="color:var(--cyan); font-size:12px;">${lang === 'sq' ? 'Po përgatitet oferta dhe dhoma e thirrjes live...' : 'WhatsApp teklifi ve sesli arama odası hazırlanıyor...'}</div>`;
   }
 
   try {
@@ -825,6 +826,7 @@ window.createSalesOfferFromModal = async function() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         recipient_name: recipient,
+        language: lang,
         phone_number: phone,
         product_name: product,
         discount: discount,

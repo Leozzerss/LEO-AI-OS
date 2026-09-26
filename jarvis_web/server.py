@@ -1093,9 +1093,10 @@ async def create_whatsapp_campaign_api(payload: dict):
         from actions.whatsapp_sales_agent import create_sales_campaign
         recipient = str(payload.get("recipient_name", "")).strip()
         phone = str(payload.get("phone_number", "")).strip()
-        product = str(payload.get("product_name", "LEO AI Akıllı Otomasyon Paketi")).strip()
-        discount = str(payload.get("discount", "%20 İndirim")).strip()
-        features = str(payload.get("features", "7/24 Kesintisiz Takip, Meta Hesap Koruma")).strip()
+        lang = str(payload.get("language", "sq")).strip()
+        product = str(payload.get("product_name", "")).strip()
+        discount = str(payload.get("discount", "")).strip()
+        features = str(payload.get("features", "")).strip()
         notes = str(payload.get("custom_notes", "")).strip()
 
         camp = create_sales_campaign(
@@ -1104,7 +1105,8 @@ async def create_whatsapp_campaign_api(payload: dict):
             product_name=product,
             discount=discount,
             features=features,
-            custom_notes=notes
+            custom_notes=notes,
+            language=lang,
         )
         return {"status": "ok", "campaign": camp}
     except Exception as e:
@@ -1365,29 +1367,35 @@ async def execute_tool_api(payload: dict):
 
               <!-- Sekmeler -->
               <div style="display:flex; gap:8px; margin-bottom:12px;">
-                <button id="tab-btn-create" onclick="switchSalesTab('create')" style="flex:1; background:#00f3ff; color:#020d18; border:none; padding:8px 12px; border-radius:6px; font-weight:700; font-size:12px; cursor:pointer;">⚡ Yeni Teklif & Sesli Oda</button>
-                <button id="tab-btn-chat" onclick="switchSalesTab('chat')" style="flex:1; background:rgba(255,255,255,0.08); color:#94a3b8; border:1px solid rgba(255,255,255,0.15); padding:8px 12px; border-radius:6px; font-weight:700; font-size:12px; cursor:pointer;">💬 WhatsApp Bot Canlı Sohbet</button>
+                <button id="tab-btn-create" onclick="switchSalesTab('create')" style="flex:1; background:#00f3ff; color:#020d18; border:none; padding:8px 12px; border-radius:6px; font-weight:700; font-size:12px; cursor:pointer;">⚡ Ofertë e Re & Dhomë Thirrjeje</button>
+                <button id="tab-btn-chat" onclick="switchSalesTab('chat')" style="flex:1; background:rgba(255,255,255,0.08); color:#94a3b8; border:1px solid rgba(255,255,255,0.15); padding:8px 12px; border-radius:6px; font-weight:700; font-size:12px; cursor:pointer;">💬 WhatsApp Bot Live Chat (Shqip & TR)</button>
               </div>
 
               <!-- SEKME 1: Yeni Teklif Oluşturucu -->
               <div id="sales-section-create">
                 <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:15px; background:rgba(0,0,0,0.3); padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
-                  <input id="sales-recipient" type="text" placeholder="Kişi / Müşteri Adı (Örn: Leo, Ahmet)" style="background:#030f18; border:1px solid rgba(0,240,255,0.3); color:#fff; padding:8px 12px; border-radius:6px; font-size:13px; outline:none;">
-                  <input id="sales-phone" type="text" placeholder="WhatsApp Telefon Numarası (Örn: +905551234567)" style="background:#030f18; border:1px solid rgba(0,240,255,0.3); color:#fff; padding:8px 12px; border-radius:6px; font-size:13px; outline:none;">
-                  <input id="sales-product" type="text" placeholder="Ürün / Hizmet (Örn: Instagram Kurtarma Paketi)" value="LEO AI Otomasyon Paketi" style="background:#030f18; border:1px solid rgba(0,240,255,0.3); color:#fff; padding:8px 12px; border-radius:6px; font-size:13px; outline:none;">
-                  <input id="sales-discount" type="text" placeholder="İndirim Oranı / Fiyat (Örn: %25 İndirim, 750 TL)" value="%25 İndirim" style="background:#030f18; border:1px solid rgba(0,240,255,0.3); color:#fff; padding:8px 12px; border-radius:6px; font-size:13px; outline:none;">
-                  <input id="sales-features" type="text" placeholder="Özellikler (virgülle ayırın)" value="7/24 Takip, Meta Koruma, Özel Destek" style="background:#030f18; border:1px solid rgba(0,240,255,0.3); color:#fff; padding:8px 12px; border-radius:6px; font-size:13px; outline:none;">
+                  <div style="display:flex; gap:8px;">
+                    <input id="sales-recipient" type="text" placeholder="Emri i Klientit (P.sh: Arben, Leo)" style="flex:2; background:#030f18; border:1px solid rgba(0,240,255,0.3); color:#fff; padding:8px 12px; border-radius:6px; font-size:13px; outline:none;">
+                    <select id="sales-lang" style="flex:1; background:#030f18; border:1px solid rgba(0,240,255,0.3); color:#00f3ff; font-weight:700; padding:8px 8px; border-radius:6px; font-size:12px; outline:none;">
+                      <option value="sq" selected>🇦🇱 Shqip</option>
+                      <option value="tr">🇹🇷 Türkçe</option>
+                    </select>
+                  </div>
+                  <input id="sales-phone" type="text" placeholder="Numri i WhatsApp (P.sh: +35569xxxxxxx ose +90555xxxxxxx)" style="background:#030f18; border:1px solid rgba(0,240,255,0.3); color:#fff; padding:8px 12px; border-radius:6px; font-size:13px; outline:none;">
+                  <input id="sales-product" type="text" placeholder="Produkti / Shërbimi" value="Paketa e Sigurisë LEO AI" style="background:#030f18; border:1px solid rgba(0,240,255,0.3); color:#fff; padding:8px 12px; border-radius:6px; font-size:13px; outline:none;">
+                  <input id="sales-discount" type="text" placeholder="Zbritja / Çmimi Special (P.sh: %25 Zbritje)" value="%25 Zbritje Ekskluzive" style="background:#030f18; border:1px solid rgba(0,240,255,0.3); color:#fff; padding:8px 12px; border-radius:6px; font-size:13px; outline:none;">
+                  <input id="sales-features" type="text" placeholder="Veçoritë kryesore (të ndara me presje)" value="Mbrojtje Meta 24/7, Asistent Zëri Inteligjent, Suport Personal" style="background:#030f18; border:1px solid rgba(0,240,255,0.3); color:#fff; padding:8px 12px; border-radius:6px; font-size:13px; outline:none;">
                   
                   <button onclick="createSalesOfferFromModal()" style="margin-top:6px; background:linear-gradient(135deg, #25d366, #00f3ff); border:none; color:#020d18; font-weight:800; padding:10px 14px; border-radius:6px; cursor:pointer; font-size:13px;">
-                    🚀 TEKLİF & SESLİ ARAMA ODASINI OLUŞTUR
+                    🚀 KRIJO OFERTËN & DHOMËN E THIRRJES ME ZË
                   </button>
                 </div>
 
                 <div id="sales-result-box" style="display:none; margin-bottom:15px;"></div>
 
-                <div style="font-weight:700; color:#94a3b8; font-size:12px; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">Son Hazırlanan Teklifler & Aramalar:</div>
+                <div style="font-weight:700; color:#94a3b8; font-size:12px; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">Ofertat & Thirrjet e Fundit:</div>
                 <div id="sales-history-list">
-                  {history_rows or '<div style="color:#64748b; font-size:12px; text-align:center; padding:10px;">Henüz aktif teklif yok.</div>'}
+                  {history_rows or '<div style="color:#64748b; font-size:12px; text-align:center; padding:10px;">Ende nuk ka oferta aktive.</div>'}
                 </div>
               </div>
 
@@ -1402,22 +1410,23 @@ async def execute_tool_api(payload: dict):
                 <!-- Chat Mesaj Alanı -->
                 <div id="whatsapp-chat-box" style="height:220px; overflow-y:auto; background:rgba(3,12,20,0.85); border:1px solid rgba(0,240,255,0.2); border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:8px; margin-bottom:10px;">
                   <div style="text-align:center; color:#64748b; font-size:11px; margin:auto 0;">
-                    🤖 Müşteri sorusunu yazın veya aşağıdaki hazır itiraz butonlarına tıklayarak LEO'nun insansı yanıtını test edin.
+                    🤖 Shkruaj pyetjen e klientit ose kliko butonat e shpejtë për të testuar përgjigjen njerëzore në Shqip/Turqisht.
                   </div>
                 </div>
 
-                <!-- Hızlı Simülasyon Butonları -->
+                <!-- Hızlı Simülasyon Butonları (Shqip & TR) -->
                 <div style="display:flex; gap:6px; overflow-x:auto; padding-bottom:6px; margin-bottom:8px;">
-                  <button onclick="quickSimulateChat('Fiyat çok yüksek geldi, indirim var mı?')" style="white-space:nowrap; background:rgba(255,0,85,0.15); border:1px solid rgba(255,0,85,0.3); color:#ff5588; font-size:11px; font-weight:600; padding:4px 8px; border-radius:12px; cursor:pointer;">💸 Fiyat Çok Yüksek</button>
-                  <button onclick="quickSimulateChat('Pakette tam olarak hangi özellikler var?')" style="white-space:nowrap; background:rgba(0,240,255,0.15); border:1px solid rgba(0,240,255,0.3); color:#00f3ff; font-size:11px; font-weight:600; padding:4px 8px; border-radius:12px; cursor:pointer;">📦 Özellikleri Sor</button>
-                  <button onclick="quickSimulateChat('Sizinle canlı telefonda sesli konuşabilir miyiz?')" style="white-space:nowrap; background:rgba(37,211,102,0.15); border:1px solid rgba(37,211,102,0.3); color:#25d366; font-size:11px; font-weight:600; padding:4px 8px; border-radius:12px; cursor:pointer;">📞 Sesli Konuşalım</button>
-                  <button onclick="quickSimulateChat('Tamam anlaştık, nasıl ödeyebilirim?')" style="white-space:nowrap; background:rgba(255,200,0,0.15); border:1px solid rgba(255,200,0,0.3); color:#ffc800; font-size:11px; font-weight:600; padding:4px 8px; border-radius:12px; cursor:pointer;">🤝 Anlaştık</button>
+                  <button onclick="quickSimulateChat('Çmimi më duket pak i shtrenjtë, a mund të bëni zbritje?')" style="white-space:nowrap; background:rgba(255,0,85,0.15); border:1px solid rgba(255,0,85,0.3); color:#ff5588; font-size:11px; font-weight:600; padding:4px 8px; border-radius:12px; cursor:pointer;">💸 🇦🇱 Është Shtrenjtë</button>
+                  <button onclick="quickSimulateChat('Çfarë veçorish përfshin kjo paketë saktësisht?')" style="white-space:nowrap; background:rgba(0,240,255,0.15); border:1px solid rgba(0,240,255,0.3); color:#00f3ff; font-size:11px; font-weight:600; padding:4px 8px; border-radius:12px; cursor:pointer;">📦 🇦🇱 Çfarë ka Paketa?</button>
+                  <button onclick="quickSimulateChat('A mund të lidhemi me zë të flasim drejtpërdrejt?')" style="white-space:nowrap; background:rgba(37,211,102,0.15); border:1px solid rgba(37,211,102,0.3); color:#25d366; font-size:11px; font-weight:600; padding:4px 8px; border-radius:12px; cursor:pointer;">📞 🇦🇱 Flasim me Zë</button>
+                  <button onclick="quickSimulateChat('Dakord u bë, si mund ta blej dhe ta paguaj?')" style="white-space:nowrap; background:rgba(255,200,0,0.15); border:1px solid rgba(255,200,0,0.3); color:#ffc800; font-size:11px; font-weight:600; padding:4px 8px; border-radius:12px; cursor:pointer;">🤝 🇦🇱 U Bë, e Dua</button>
+                  <button onclick="quickSimulateChat('Fiyat çok yüksek geldi, indirim var mı?')" style="white-space:nowrap; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#cbd5e1; font-size:11px; font-weight:600; padding:4px 8px; border-radius:12px; cursor:pointer;">💸 🇹🇷 Fiyat Yüksek</button>
                 </div>
 
                 <!-- Mesaj Gönderme Girişi -->
                 <div style="display:flex; gap:6px;">
-                  <input id="chat-input-msg" type="text" placeholder="Müşteriden gelen mesajı yazın..." onkeydown="if(event.key==='Enter') sendWhatsAppBotMsg()" style="flex:1; background:#030f18; border:1px solid rgba(0,240,255,0.3); color:#fff; padding:8px 12px; border-radius:6px; font-size:13px; outline:none;">
-                  <button onclick="sendWhatsAppBotMsg()" style="background:#25d366; color:#020d18; font-weight:800; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px;">GÖNDER</button>
+                  <input id="chat-input-msg" type="text" placeholder="Shkruaj mesazhin e klientit (Shqip ose Turqisht)..." onkeydown="if(event.key==='Enter') sendWhatsAppBotMsg()" style="flex:1; background:#030f18; border:1px solid rgba(0,240,255,0.3); color:#fff; padding:8px 12px; border-radius:6px; font-size:13px; outline:none;">
+                  <button onclick="sendWhatsAppBotMsg()" style="background:#25d366; color:#020d18; font-weight:800; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px;">DËRGO</button>
                 </div>
 
                 <div id="chat-actions-bar" style="display:none; margin-top:10px; display:flex; gap:8px;">
