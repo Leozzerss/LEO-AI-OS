@@ -3,5 +3,16 @@
     "creator": {
       "value": "leohoca"
     }
+  },
+  "whatsapp_contacts": {
+    "leo": {
+      "value": "+13602996009",
+      "display_name": "Leo",
+      "aliases": [
+        "leohoca",
+        "boss",
+        "admin"
+      ]
+    }
   }
 }
