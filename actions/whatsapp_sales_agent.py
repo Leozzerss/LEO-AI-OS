@@ -415,3 +415,159 @@ def generate_whatsapp_bot_reply(
         "chat_history": get_campaign_chat_history(room_id),
     }
 
+
+SCHEDULED_CALLS_FILE = BASE_DIR / "memory" / "scheduled_whatsapp_calls.json"
+
+
+def send_baileys_direct_message(phone: str, message: str) -> dict:
+    """Baileys WhatsApp servisi üzerinden doğrudan mesaj iletir."""
+    import urllib.request
+    clean_p = _normalize_phone(phone)
+    payload = json.dumps({"phone": clean_p, "message": message}).encode("utf-8")
+    try:
+        req = urllib.request.Request(
+            "http://127.0.0.1:8769/send",
+            data=payload,
+            headers={"Content-Type": "application/json"}
+        )
+        with urllib.request.urlopen(req, timeout=5) as res:
+            return json.loads(res.read().decode("utf-8"))
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+def schedule_whatsapp_call_or_message(
+    phone_number: str = "",
+    recipient_name: str = "Leo",
+    time_str: str = "18:00",
+    message_or_offer: str = "",
+    language: str = "sq",
+) -> dict:
+    """Belirtilen saatte müşteriyi aramak / WhatsApp'tan otomatik bağlamak için zamanlar."""
+    clean_phone = _normalize_phone(phone_number)
+    name = (recipient_name or "Leo").strip()
+
+    if not clean_phone:
+        try:
+            from actions.whatsapp import get_whatsapp_contact
+            contact = get_whatsapp_contact(name)
+            if contact and contact.get("phone_number"):
+                clean_phone = _normalize_phone(contact["phone_number"])
+        except Exception:
+            pass
+        if not clean_phone:
+            clean_phone = "13602996009"
+
+    # Teklif kampanyasını hazırla
+    camp = create_sales_campaign(
+        recipient_name=name,
+        phone_number=clean_phone,
+        language=language,
+        custom_notes=f"E planifikuar për në orën {time_str}"
+    )
+
+    outreach_text = message_or_offer.strip() or camp["message_text"]
+
+    # Saat hesapla
+    now = time.localtime()
+    t_lower = (str(time_str) or "").strip().lower()
+
+    if any(k in t_lower for k in ["hemen", "now", "tani", "derhal", "simdi", "şimdi", "direct", "menjehere", "menjëherë"]):
+        delay_sec = 2
+        h, m = now.tm_hour, now.tm_min
+        time_display = f"{h:02d}:{m:02d} (Tani / Menjëherë)"
+    else:
+        rel_match = re.search(r"(\d+)\s*(?:dak|min|dakika|minuta)", t_lower)
+        if rel_match:
+            mins = int(rel_match.group(1))
+            delay_sec = max(2, mins * 60)
+            target_t = time.time() + delay_sec
+            t_struct = time.localtime(target_t)
+            h, m = t_struct.tm_hour, t_struct.tm_min
+            time_display = f"{h:02d}:{m:02d} (+{mins} min)"
+        else:
+            try:
+                parts = [int(p) for p in re.findall(r"\d+", time_str)[:2]]
+                h = parts[0]
+                m = parts[1] if len(parts) > 1 else 0
+            except Exception:
+                h, m = now.tm_hour, (now.tm_min + 5) % 60
+
+            target_time = time.mktime((
+                now.tm_year, now.tm_mon, now.tm_mday,
+                h, m, 0,
+                now.tm_wday, now.tm_yday, now.tm_isdst
+            ))
+            if target_time <= time.time():
+                # Eğer bugün geçmişse yarın aynı saate planla
+                target_time += 86400
+
+            delay_sec = max(2, target_time - time.time())
+            time_display = f"{h:02d}:{m:02d}"
+
+    target_timestamp = time.time() + delay_sec
+
+    task_id = f"call_{uuid.uuid4().hex[:6]}"
+    task_entry = {
+        "id": task_id,
+        "phone": clean_phone,
+        "recipient_name": name,
+        "scheduled_time": time_display,
+        "target_timestamp": target_timestamp,
+        "status": "SCHEDULED",
+        "room_id": camp["room_id"],
+        "call_url": camp["call_url"],
+        "message": outreach_text,
+        "created_at": time.strftime("%Y-%m-%d %H:%M:%S")
+    }
+
+    # Dosyaya kaydet
+    SCHEDULED_CALLS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    all_tasks = []
+    try:
+        if SCHEDULED_CALLS_FILE.exists():
+            all_tasks = json.loads(SCHEDULED_CALLS_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        pass
+    all_tasks.append(task_entry)
+    SCHEDULED_CALLS_FILE.write_text(json.dumps(all_tasks, indent=2, ensure_ascii=False), encoding="utf-8")
+
+    # Arka planda gecikmeli tetikleyici başlat
+    import threading
+    def _delayed_call_trigger():
+        time.sleep(delay_sec)
+        print(f"\n⏰ [L.E.O AUTOMATED CALL] Ora {time_display} — Po telefonohet/kontaktohet {name} (+{clean_phone}) në WhatsApp!")
+        
+        # 1. Baileys ile doğrudan WhatsApp mesajı gönder
+        res = send_baileys_direct_message(clean_phone, outreach_text)
+        print(f"[L.E.O AUTOMATED CALL] Rezultati i dërgimit: {res}")
+
+        # 2. Görevi tamamlandı olarak işaretle
+        try:
+            tasks = json.loads(SCHEDULED_CALLS_FILE.read_text(encoding="utf-8"))
+            for t in tasks:
+                if t["id"] == task_id:
+                    t["status"] = "EXECUTED"
+                    t["executed_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
+                    t["send_result"] = res
+            SCHEDULED_CALLS_FILE.write_text(json.dumps(tasks, indent=2, ensure_ascii=False), encoding="utf-8")
+        except Exception:
+            pass
+
+    t = threading.Thread(target=_delayed_call_trigger, daemon=True)
+    t.start()
+
+    return {
+        "ok": True,
+        "task_id": task_id,
+        "recipient": name,
+        "phone": clean_phone,
+        "time": time_display,
+        "call_url": camp["call_url"],
+        "message": (
+            f"✅ U regjistrua me sukses! LEO do ta kontaktojë dhe thërrasë {name} (+{clean_phone}) "
+            f"në orën {time_display} në WhatsApp me ofertën speciale dhe dhomën e zërit."
+        )
+    }
+
+

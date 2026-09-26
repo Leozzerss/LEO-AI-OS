@@ -30,8 +30,8 @@ import traceback
 import uuid
 from pathlib import Path
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, Response
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 
@@ -122,7 +122,7 @@ SERVER_TOOLS = {
     "sys_info", "get_phone_telemetry", "get_device_telemetry", "control_mobile_app", "voice_command_listener",
     "instagram_stalker_agent", "instagram_live_stalker", "social_media_manager", "business_meta_auto_publisher_and_ads",
     "smart_home_iot_hub", "survival_companion_mode", "apply_command_center_ui", "create_whatsapp_sales_campaign",
-    "whatsapp_bot_chat"
+    "whatsapp_bot_chat", "schedule_whatsapp_call"
 }
 # Tarayıcıya yönlendirilen araçlar
 CLIENT_TOOLS = {"toggle_webcam", "apply_command_center_ui"}
@@ -534,6 +534,25 @@ async def run_server_tool(name: str, args: dict) -> str:
                 )
             except Exception as e:
                 return f"WhatsApp bot sohbet hatası: {e}"
+
+        if name == "schedule_whatsapp_call":
+            try:
+                from actions.whatsapp_sales_agent import schedule_whatsapp_call_or_message
+                recipient = args.get("recipient_name", "Leo")
+                phone = args.get("phone_number", "")
+                time_str = args.get("time_str", "18:00")
+                offer = args.get("message_or_offer", "")
+                lang = args.get("language", "sq")
+                res = schedule_whatsapp_call_or_message(
+                    phone_number=phone,
+                    recipient_name=recipient,
+                    time_str=time_str,
+                    message_or_offer=offer,
+                    language=lang
+                )
+                return res.get("message") or f"Arama saat {time_str} için planlandı."
+            except Exception as e:
+                return f"WhatsApp arama planlanırken hata: {e}"
 
         if name == "find_location":
             t = get_current_telemetry()
@@ -1184,6 +1203,490 @@ async def whatsapp_webhook_receive(request: Request):
         return {"status": "success"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+@app.get("/api/whatsapp/status")
+async def get_whatsapp_status_api():
+    """Baileys WhatsApp mikroshërbimit statusin pyet."""
+    try:
+        import urllib.request
+        with urllib.request.urlopen("http://127.0.0.1:8769/status", timeout=2) as res:
+            return json.loads(res.read().decode("utf-8"))
+    except Exception as e:
+        return {"connected": False, "error": str(e), "hasQR": False}
+
+@app.get("/api/whatsapp/scheduled_calls")
+async def get_scheduled_calls_api():
+    """Të gjitha thirrjet dhe mesazhet e planifikuara kthen."""
+    from actions.whatsapp_sales_agent import SCHEDULED_CALLS_FILE
+    try:
+        if SCHEDULED_CALLS_FILE.exists():
+            return json.loads(SCHEDULED_CALLS_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        pass
+    return []
+
+@app.post("/api/whatsapp/schedule_call")
+async def schedule_call_api(payload: dict):
+    """Thirrje ose mesazh të ri në WhatsApp planifikon."""
+    from actions.whatsapp_sales_agent import schedule_whatsapp_call_or_message
+    res = schedule_whatsapp_call_or_message(
+        phone_number=payload.get("phone", ""),
+        recipient_name=payload.get("recipient_name", "Leo"),
+        time_str=payload.get("time_str", "18:00"),
+        message_or_offer=payload.get("message_or_offer", ""),
+        language=payload.get("language", "sq")
+    )
+    return res
+
+@app.get("/qr", response_class=HTMLResponse)
+async def whatsapp_qr_dashboard():
+    """WhatsApp lidhja direkte me QR kod dhe menaxhimi i thirrjeve automatike."""
+    html_content = """<!DOCTYPE html>
+<html lang="sq">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LEO AI OS — WhatsApp Lidhja & Thirrjet Automatike</title>
+  <style>
+    * { box-sizing: border-box; margin:0; padding:0; }
+    body {
+      background: radial-gradient(circle at 50% 10%, #06182c 0%, #020810 100%);
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1.5rem 1rem;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 1.8rem;
+    }
+    .header h1 {
+      font-size: 1.6rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      color: #00f3ff;
+      text-shadow: 0 0 15px rgba(0, 243, 255, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .header p {
+      color: #94a3b8;
+      font-size: 0.85rem;
+      margin-top: 4px;
+    }
+    .container {
+      width: 100%;
+      max-width: 720px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+    .card {
+      background: rgba(7, 21, 36, 0.85);
+      border: 1px solid rgba(0, 243, 255, 0.25);
+      border-radius: 16px;
+      padding: 1.4rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(12px);
+    }
+    .card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #00f3ff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding-bottom: 0.5rem;
+    }
+    .badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .badge-success { background: rgba(37, 211, 102, 0.2); color: #25d366; border: 1px solid #25d366; }
+    .badge-waiting { background: rgba(245, 158, 11, 0.2); color: #f59e0b; border: 1px solid #f59e0b; }
+    
+    /* QR Section */
+    #qr-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 1rem 0;
+    }
+    #qr-img {
+      width: 240px;
+      height: 240px;
+      background: #fff;
+      border-radius: 12px;
+      padding: 10px;
+      margin: 1rem 0;
+      box-shadow: 0 0 25px rgba(0, 243, 255, 0.3);
+    }
+    .instructions {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 0.85rem;
+      color: #94a3b8;
+      line-height: 1.6;
+      width: 100%;
+      text-align: left;
+    }
+    .instructions b { color: #fff; }
+
+    /* Connected Section */
+    #connected-box {
+      display: none;
+      background: rgba(37, 211, 102, 0.08);
+      border: 1px solid rgba(37, 211, 102, 0.3);
+      border-radius: 12px;
+      padding: 1.2rem;
+      text-align: center;
+    }
+    .conn-title {
+      color: #25d366;
+      font-size: 1.15rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+    }
+    .conn-info {
+      font-size: 0.9rem;
+      color: #cbd5e1;
+      margin-bottom: 0.3rem;
+    }
+
+    /* Form Styles */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+    .form-row {
+      display: flex;
+      gap: 0.8rem;
+    }
+    @media (max-width: 500px) {
+      .form-row { flex-direction: column; }
+    }
+    label {
+      font-size: 0.8rem;
+      color: #94a3b8;
+      font-weight: 600;
+    }
+    input, select, textarea {
+      background: #030f1a;
+      border: 1px solid rgba(0, 243, 255, 0.3);
+      border-radius: 8px;
+      color: #fff;
+      padding: 10px 12px;
+      font-size: 0.9rem;
+      outline: none;
+      width: 100%;
+      transition: all 0.2s;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: #00f3ff;
+      box-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
+    }
+    .btn-submit {
+      background: linear-gradient(135deg, #25d366, #00f3ff);
+      color: #020b12;
+      border: none;
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 0.95rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(0, 243, 255, 0.4);
+    }
+
+    /* Queue Table */
+    .queue-item {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .queue-name { font-weight: 700; color: #fff; font-size: 0.9rem; }
+    .queue-time { color: #00f3ff; font-weight: 700; font-size: 0.85rem; }
+    .queue-phone { color: #94a3b8; font-size: 0.8rem; }
+    .btn-link {
+      background: rgba(0,243,255,0.15);
+      color: #00f3ff;
+      border: 1px solid rgba(0,243,255,0.4);
+      padding: 4px 10px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    .voice-tip {
+      background: rgba(245, 158, 11, 0.08);
+      border: 1px dashed rgba(245, 158, 11, 0.4);
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 0.82rem;
+      color: #fcd34d;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1><span>🤖</span> LEO AI OS — WhatsApp Qendra</h1>
+    <p>Lidhja me QR Kod dhe Thirrjet e Planifikuara Automatike (%100 Falas)</p>
+  </div>
+
+  <div class="container">
+
+    <!-- KARTELA 1: LIDHJA WHATSAPP (QR KOD) -->
+    <div class="card">
+      <div class="card-title">
+        <span>📲 Statusi i WhatsApp</span>
+        <span id="conn-badge" class="badge badge-waiting">Po Kontrollohet...</span>
+      </div>
+
+      <!-- Nëse nuk është i lidhur: QR Kodi -->
+      <div id="qr-container">
+        <div class="instructions">
+          1. Hap <b>WhatsApp</b> në telefonin tënd.<br>
+          2. Shko te <b>Settings (Cilësimet)</b> ➔ <b>Linked Devices (Pajisjet e Lidhura)</b>.<br>
+          3. Prek <b>Link a Device (Lidh një Pajisje)</b> dhe skano këtë kod.
+        </div>
+        <img id="qr-img" src="" alt="QR Kod">
+        <div style="font-size:0.8rem; color:#94a3b8;" id="qr-status-msg">Po pret skanimin nga telefoni...</div>
+      </div>
+
+      <!-- Nëse është i lidhur: Informacioni Aktiv -->
+      <div id="connected-box">
+        <div class="conn-title">✅ WHATSAPP I LIDHUR ME SUKSES!</div>
+        <div class="conn-info" id="user-display">👤 Përdoruesi: LEO OS (+13602996009)</div>
+        <p style="font-size:0.82rem; color:#94a3b8; margin-top:8px;">
+          Tani LEO AI mund të dërgojë mesazhe, të negociojë në Shqip/TR dhe të thërrasë automatikisht në orën që cakton pa prekur asnjë buton!
+        </p>
+      </div>
+    </div>
+
+    <!-- KARTELA 2: PLANIFIKO THIRRJE / MESAZH TË RI -->
+    <div class="card">
+      <div class="card-title">
+        <span>⏰ Planifiko Thirrje / Ofertë Automatike</span>
+      </div>
+
+      <div class="form-group">
+        <div class="form-row">
+          <div style="flex:2;">
+            <label>Emri i Klientit</label>
+            <input type="text" id="sched-name" value="Leo" placeholder="P.sh: Leo, Arben">
+          </div>
+          <div style="flex:1;">
+            <label>Gjuha</label>
+            <select id="sched-lang">
+              <option value="sq" selected>🇦🇱 Shqip</option>
+              <option value="tr">🇹🇷 Türkçe</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div style="flex:2;">
+            <label>Numri i WhatsApp</label>
+            <input type="text" id="sched-phone" value="+13602996009" placeholder="+13602996009">
+          </div>
+          <div style="flex:1;">
+            <label>Ora e Thirrjes</label>
+            <input type="text" id="sched-time" value="Tani" placeholder="18:00 ose Tani">
+          </div>
+        </div>
+
+        <div>
+          <label>Oferta / Zbritja & Shënime</label>
+          <input type="text" id="sched-offer" value="%25 Zbritje Ekskluzive & Asistent 24/7" placeholder="Zbritja ose mesazhi i personalizuar">
+        </div>
+
+        <button class="btn-submit" onclick="submitSchedule()">
+          🚀 PLANIFIKO DHE TELEFONO AUTOMATIKISHT
+        </button>
+      </div>
+
+      <div id="schedule-toast" style="margin-top:10px; display:none; padding:10px; border-radius:8px; font-size:0.85rem; text-align:center;"></div>
+    </div>
+
+    <!-- KARTELA 3: THIRRJET E PLANIFIKUARA NË RADHË -->
+    <div class="card">
+      <div class="card-title">
+        <span>📋 Radha e Thirrjeve Aktive</span>
+        <button onclick="loadQueue()" style="background:transparent; border:none; color:#00f3ff; font-size:0.8rem; cursor:pointer;">🔄 Rifresko</button>
+      </div>
+
+      <div id="queue-list">
+        <div style="color:#64748b; font-size:0.85rem; text-align:center; padding:10px;">Po ngarkohet lista...</div>
+      </div>
+    </div>
+
+    <!-- KARTELA 4: KOMANDA ME ZË NË MIKROFON -->
+    <div class="voice-tip">
+      🎙️ <b>Përdorimi me Zë nga Asistenti:</b><br>
+      Mund t'i thuash LEO-s direkt në mikrofon me zë:<br>
+      <i>"Saat 18:00'da Leo'yu WhatsApp'tan ara"</i> ose <i>"Në orën 18:00 telefono Leo-n dhe jepi ofertën"</i>.<br>
+      LEO do ta regjistrojë orën dhe do ta thërrasë ekzaktësisht në atë moment pa pasur nevojë të hapësh asgjë!
+    </div>
+
+  </div>
+
+  <script>
+    let isConnected = false;
+
+    async function checkStatus() {
+      try {
+        const res = await fetch('/api/whatsapp/status');
+        const data = await res.json();
+        const badge = document.getElementById('conn-badge');
+        const qrBox = document.getElementById('qr-container');
+        const connBox = document.getElementById('connected-box');
+
+        if (data.connected) {
+          isConnected = true;
+          badge.className = 'badge badge-success';
+          badge.innerText = '✅ I LIDHUR ME SUKSES';
+          qrBox.style.display = 'none';
+          connBox.style.display = 'block';
+          if (data.user) {
+            document.getElementById('user-display').innerText = '👤 Përdoruesi: ' + (data.user.name || 'LEO OS') + ' (' + (data.user.id ? data.user.id.split('@')[0] : '') + ')';
+          }
+        } else {
+          isConnected = false;
+          badge.className = 'badge badge-waiting';
+          badge.innerText = '⏳ PO PRET SKANIMIN';
+          qrBox.style.display = 'flex';
+          connBox.style.display = 'none';
+
+          // Merr QR kodin
+          try {
+            const qrRes = await fetch('http://' + window.location.hostname + ':8769/qr');
+            const qrData = await qrRes.json();
+            if (qrData.qr) {
+              document.getElementById('qr-img').src = qrData.qr;
+              document.getElementById('qr-status-msg').innerText = 'Skano kodin e mësipërm me WhatsApp.';
+            }
+          } catch(e) {}
+        }
+      } catch(err) {
+        console.error('Status check error:', err);
+      }
+    }
+
+    async function loadQueue() {
+      try {
+        const res = await fetch('/api/whatsapp/scheduled_calls');
+        const tasks = await res.json();
+        const qList = document.getElementById('queue-list');
+        if (!tasks || tasks.length === 0) {
+          qList.innerHTML = '<div style="color:#64748b; font-size:0.85rem; text-align:center; padding:10px;">Nuk ka asnjë thirrje të planifikuar momentalisht.</div>';
+          return;
+        }
+
+        let html = '';
+        tasks.slice().reverse().forEach(t => {
+          const isExecuted = t.status === 'EXECUTED';
+          const badgeClass = isExecuted ? 'badge-success' : 'badge-waiting';
+          const statusTxt = isExecuted ? 'KRYER' : 'PLANIFIKUAR';
+          html += `
+            <div class="queue-item">
+              <div>
+                <div class="queue-name">${t.recipient_name || 'Leo'} <span class="badge ${badgeClass}" style="font-size:0.65rem;">${statusTxt}</span></div>
+                <div class="queue-phone">📞 +${t.phone || ''}</div>
+              </div>
+              <div style="text-align:right;">
+                <div class="queue-time">⏰ ${t.scheduled_time}</div>
+                ${t.call_url ? `<a href="${t.call_url}" target="_blank" class="btn-link" style="margin-top:4px; display:inline-block;">Dhoma e Zërit</a>` : ''}
+              </div>
+            </div>
+          `;
+        });
+        qList.innerHTML = html;
+      } catch(e) {}
+    }
+
+    async function submitSchedule() {
+      const name = document.getElementById('sched-name').value;
+      const phone = document.getElementById('sched-phone').value;
+      const timeStr = document.getElementById('sched-time').value;
+      const lang = document.getElementById('sched-lang').value;
+      const offer = document.getElementById('sched-offer').value;
+      const toast = document.getElementById('schedule-toast');
+
+      toast.style.display = 'block';
+      toast.style.background = 'rgba(0, 243, 255, 0.15)';
+      toast.style.color = '#00f3ff';
+      toast.innerText = 'Po regjistrohet thirrja e planifikuar...';
+
+      try {
+        const res = await fetch('/api/whatsapp/schedule_call', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            recipient_name: name,
+            phone: phone,
+            time_str: timeStr,
+            language: lang,
+            message_or_offer: offer
+          })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          toast.style.background = 'rgba(37, 211, 102, 0.2)';
+          toast.style.color = '#25d366';
+          toast.innerText = data.message || '✅ Thirrja u planifikua me sukses!';
+          loadQueue();
+        } else {
+          toast.style.background = 'rgba(239, 68, 68, 0.2)';
+          toast.style.color = '#ef4444';
+          toast.innerText = 'Gabim: ' + (data.error || 'Nuk mund të planifikohej');
+        }
+      } catch(e) {
+        toast.style.background = 'rgba(239, 68, 68, 0.2)';
+        toast.style.color = '#ef4444';
+        toast.innerText = 'Gabim rrjeti: ' + e.message;
+      }
+    }
+
+    // Inicializimi
+    checkStatus();
+    loadQueue();
+    setInterval(checkStatus, 3000);
+    setInterval(loadQueue, 5000);
+  </script>
+</body>
+</html>"""
+    return HTMLResponse(content=html_content)
 
 @app.post("/api/tool/execute")
 async def execute_tool_api(payload: dict):

@@ -588,6 +588,22 @@ class JarvisLive:
                     f"• WhatsApp Linki: {camp['whatsapp_direct_url']}"
                 )
 
+            elif name == "schedule_whatsapp_call":
+                from actions.whatsapp_sales_agent import schedule_whatsapp_call_or_message
+                recipient = args.get("recipient_name", "Leo")
+                phone = args.get("phone_number", "")
+                res = await loop.run_in_executor(
+                    None,
+                    lambda: schedule_whatsapp_call_or_message(
+                        phone_number=phone,
+                        recipient_name=recipient,
+                        time_str=args.get("time_str", "18:00"),
+                        message_or_offer=args.get("message_or_offer", ""),
+                        language=args.get("language", "sq")
+                    )
+                )
+                result = res.get("message") or f"Arama saat {args.get('time_str')} için planlandı."
+
             elif name == "whatsapp_bot_chat":
                 from actions.whatsapp_sales_agent import generate_whatsapp_bot_reply
                 res = await loop.run_in_executor(

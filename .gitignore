@@ -39,3 +39,5 @@ npm-debug.log*
 # ── Runtime Logs & Ephemeral Files ──────────────────────────
 *.log
 memory/leo_tunnel_active.json
+whatsapp_service/auth_info/
+whatsapp_service/node_modules/

@@ -1,0 +1,14 @@
+[
+  {
+    "id": "call_6012fd",
+    "phone": "13602996009",
+    "recipient_name": "Leo",
+    "scheduled_time": "18:00",
+    "target_timestamp": 1790438400.0000021,
+    "status": "SCHEDULED",
+    "room_id": "leo-6c4db4cc",
+    "call_url": "https://leo-ai-backend.onrender.com/call?room=leo-6c4db4cc",
+    "message": "%25 Zbritje Ekskluzive per Paketën VIP",
+    "created_at": "2026-09-26 15:53:01"
+  }
+]

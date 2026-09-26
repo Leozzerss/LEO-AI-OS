@@ -467,6 +467,42 @@ TOOL_DECLARATIONS = [
         }
     },
     {
+        "name": "schedule_whatsapp_call",
+        "description": (
+            "Belirtilen saatte (veya hemen/şimdi) müşteriyi WhatsApp üzerinden otomatik aramak, "
+            "sesli görüşmeye davet etmek veya satış teklifi göndermek için zamanlar. "
+            "Kullanıcı 'Leo'yu saat 18:00'da WhatsApp'tan ara', 'Ahmet'i 16:30'da ara ve teklif ver', "
+            "'Në orën 18:00 telefono Leo-n', 'Bu saatte bunu arayacaksın' dediğinde kullanılır. "
+            "WhatsApp servisi üzerinden doğrudan mesaj ve sesli arama odasını iletir."
+        ),
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "recipient_name": {
+                    "type": "STRING",
+                    "description": "Müşterinin veya aranacak kişinin adı (Örn: 'Leo', 'Ahmet')"
+                },
+                "phone_number": {
+                    "type": "STRING",
+                    "description": "Aranacak telefon numarası (Örn: +13602996009). Kişi adı 'Leo' ise otomatik doldurulur."
+                },
+                "time_str": {
+                    "type": "STRING",
+                    "description": "Aramanın yapılacağı saat (Örn: '18:00', '16:30', 'hemen', 'tani', '10 dakika sonra')"
+                },
+                "message_or_offer": {
+                    "type": "STRING",
+                    "description": "Müşteriye iletilecek özel teklif, indirim veya görüşme konusu (Boş bırakılırsa yapay zeka otomatik hazırlar)"
+                },
+                "language": {
+                    "type": "STRING",
+                    "description": "Konuşma ve teklif dili ('sq' Arnavutça veya 'tr' Türkçe). Varsayılan 'sq'."
+                }
+            },
+            "required": ["recipient_name", "time_str"]
+        }
+    },
+    {
         "name": "whatsapp_bot_chat",
         "description": (
             "WhatsApp botu ile müşteri arasında ikna edici, insansı mesajlaşma ve pazarlık yanıtı üretir. "
